@@ -3,31 +3,12 @@
 
 #pragma once
 
+#include "common.hpp"
 #include "slwinapi.hpp"
 
 
-constexpr void *operator new (unsigned long long, void *p)
-{
-	return p;
-}
-
 namespace sl
 {
-
-template <typename A, typename B>
-constexpr bool _is_same = false;
-
-template <typename A>
-constexpr bool _is_same<A, A> = true;
-
-template <typename T>
-constexpr bool _always_false = false;
-
-template <typename T>
-constexpr T _declval() { static_assert(_always_false<T>, "declval not allowed in an evaluated context"); }
-
-const unsigned long long _FL_OFFSET = 128;
-const unsigned long long _DESTROY_OFFSET = 64;
 
 template <typename F>
 struct _helper;
@@ -91,7 +72,7 @@ struct lambda
 			unsigned char *_f = reinterpret_cast<unsigned char *>(&_helper<F>::proxy<FL>::func);
 			unsigned char *f = reinterpret_cast<unsigned char *>(&_f);
 
-			const unsigned char opcodes[] = {
+			unsigned char const opcodes[] = {
 				// push rbx ; rbx must be saved by callee (if changed)
 				0x53,
 				// push rbx ; do it twice to align stack to 16
@@ -115,8 +96,7 @@ struct lambda
 				0xC3,
 			};
 
-			for (int i = 0; i < sizeof(opcodes); ++i)
-				ptr[i] = opcodes[i];
+			_memcpy(ptr, opcodes, sizeof(opcodes));
 		}
 
 		{

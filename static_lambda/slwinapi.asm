@@ -1,10 +1,6 @@
 
 .code
 
-_sl_get_rax proc
-	ret
-_sl_get_rax endp
-
 _sl_NtAllocateVirtualMemory proc
 	mov r10, rcx
 	mov eax, 18h
@@ -25,6 +21,16 @@ _sl_NtProtectVirtualMemory proc
 	syscall
 	ret
 _sl_NtProtectVirtualMemory endp
+
+_sl_get_rax proc
+	ret
+_sl_get_rax endp
+
+_sl_copy_aligned_16 proc
+	movaps xmm0, [rdx]
+	movdqa [rcx], xmm0
+	ret
+_sl_copy_aligned_16 endp
 
 
 end

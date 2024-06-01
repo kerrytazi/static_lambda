@@ -101,6 +101,7 @@ _sl_VirtualProtect(
 
 
 extern "C" unsigned long long _sl_get_rax();
+extern "C" void _sl_copy_aligned_16(void *dst, void const *src);
 
 
 } // namespace slwinapi

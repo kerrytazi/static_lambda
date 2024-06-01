@@ -13,10 +13,24 @@
     <ClInclude Include="static_lambda.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="ldisasm.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="detour_lambda.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="slwinapi.asm">
       <Filter>Source Files</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ldisasm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
