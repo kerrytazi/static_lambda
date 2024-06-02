@@ -49,7 +49,7 @@ struct lambda
 				// push rbx ; do it twice to align stack to 16
 				0x53,
 
-				// mov rax, <func> ; hidden argument passed in rax (non standart calling convention)
+				// mov rax, <func> ; hidden argument passed in rax (non standard calling convention)
 				0x48, 0xB8, t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7],
 
 				// mov rbx, <proxy>
