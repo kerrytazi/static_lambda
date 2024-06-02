@@ -11,18 +11,14 @@ void _start()
 	{
 		int c = 10;
 
-		int (*original)(int, int) = nullptr;
-
-		auto replacement = [c, &original](int a, int b) -> int
+		auto replacement = [c](auto original, int a, int b) -> int
 		{
 			return original(a, b) + c;
 		};
 
-		sl::detour<int(int, int)> a(&target_func, &original, replacement);
+		sl::detour<int(int, int)> a(&target_func, replacement);
 
 		int result = target_func(3, 5);
-
-
 		int tmp = 0;
 	}
 

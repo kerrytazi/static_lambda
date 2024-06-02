@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "common.hpp"
 #include "slwinapi.hpp"
+#include "common.hpp"
 #include "static_lambda.hpp"
 #include "ldisasm.hpp"
 
@@ -16,8 +16,8 @@ template <typename F>
 struct detour
 {
 	template <typename FL>
-	detour(_helper<F>::function_pointer_type target, _helper<F>::function_pointer_type *original, FL &&func)
-		: _sl{ static_cast<FL &&>(func) }
+	detour(_helper<F>::function_pointer_type target, FL &&func)
+		: _sl{ static_cast<_remove_reference_t<FL> &&>(func), _detour_tag{} }
 	{
 		unsigned char *t = reinterpret_cast<unsigned char *>(target);
 
@@ -53,6 +53,9 @@ struct detour
 
 		unsigned long long code_size = tmp - t;
 
+		if (code_size > 16)
+			__debugbreak(); // TODO
+
 		for (int i = 0; i < code_size - min_patch_size; ++i)
 		{
 			patch[min_patch_size - 1 + i] = 0x90; // noop
@@ -86,8 +89,6 @@ struct detour
 			auto copy_of_original = static_cast<unsigned char *>(_sl._mem) + _COPY_OF_ORIGINAL_OFFSET;
 			_memcpy(copy_of_original, t, code_size);
 			_memcpy(copy_of_original + code_size, redirect, sizeof(redirect));
-
-			*original = reinterpret_cast<_helper<F>::function_pointer_type>(copy_of_original);
 		}
 
 		_slwinapi::_sl_copy_aligned_16(t, patch);

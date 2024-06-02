@@ -3,40 +3,12 @@
 
 #pragma once
 
-#include "common.hpp"
 #include "slwinapi.hpp"
+#include "common.hpp"
 
 
 namespace sl
 {
-
-template <typename F>
-struct _helper;
-
-template <typename TRet, typename... TArgs>
-struct _helper<TRet(TArgs...)>
-{
-	using function_pointer_type = TRet (*)(TArgs...);
-
-	template <typename TOther>
-	static constexpr bool is_compatible = _is_same<decltype(_declval<TOther>()(_declval<TArgs>()...)), TRet>;
-
-	template <typename FL>
-	struct proxy
-	{
-		static TRet func(TArgs... args)
-		{
-			unsigned char *ptr = reinterpret_cast<unsigned char *>(_slwinapi::_sl_get_rax());
-			FL *func = reinterpret_cast<FL *>(ptr);
-			return (*func)(args...);
-		}
-
-		static void destroy(FL *func)
-		{
-			func->~FL();
-		}
-	};
-};
 
 template <typename F>
 struct lambda
@@ -59,17 +31,16 @@ struct lambda
 	}
 
 	template <typename FL>
-	lambda(FL &&func)
-		: _mem{ _slwinapi::_sl_VirtualAlloc(nullptr, _FL_OFFSET + sizeof(FL), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE) }
+	void _init(void *proxy_func)
 	{
-		static_assert(_helper<F>{}.is_compatible<FL>, "Lambda type is not compatible with declaration");
+		_mem = _slwinapi::_sl_VirtualAlloc(nullptr, _FL_OFFSET + sizeof(_remove_reference_t<FL>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE);
 
 		unsigned char *ptr = static_cast<unsigned char *>(_mem);
 
 		{
-			unsigned char const *_t = reinterpret_cast<unsigned char const *>(ptr + _FL_OFFSET);
+			unsigned char const *_t = reinterpret_cast<unsigned char const *>(ptr);
 			unsigned char const *t = reinterpret_cast<unsigned char const *>(&_t);
-			unsigned char *_f = reinterpret_cast<unsigned char *>(&_helper<F>::proxy<FL>::func);
+			unsigned char *_f = static_cast<unsigned char *>(proxy_func);
 			unsigned char *f = reinterpret_cast<unsigned char *>(&_f);
 
 			unsigned char const opcodes[] = {
@@ -100,12 +71,24 @@ struct lambda
 		}
 
 		{
-			new (ptr + _FL_OFFSET) FL(static_cast<FL &&>(func));
+			*reinterpret_cast<void **>(ptr + _DESTROY_OFFSET) = static_cast<void *>(&_helper<F>::proxy<_remove_reference_t<FL>>::destroy);
 		}
+	}
 
-		{
-			*reinterpret_cast<void **>(ptr + _DESTROY_OFFSET) = static_cast<void *>(&_helper<F>::proxy<FL>::destroy);
-		}
+	template <typename FL>
+	lambda(FL &&func)
+	{
+		static_assert(_helper<F>{}.is_compatible<_remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
+		_init<_remove_reference_t<FL>>(&_helper<F>::proxy<_remove_reference_t<FL>>::func);
+		new ((char *)_mem + _FL_OFFSET) _remove_reference_t<FL>(static_cast<_remove_reference_t<FL> &&>(func));
+	}
+
+	template <typename FL>
+	lambda(FL &&func, _detour_tag &&)
+	{
+		static_assert(_helper<F>{}.is_compatible_detour<_remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
+		_init<_remove_reference_t<FL>>(&_helper<F>::proxy<_remove_reference_t<FL>>::func_detour);
+		new ((char *)_mem + _FL_OFFSET) _remove_reference_t<FL>(static_cast<_remove_reference_t<FL> &&>(func));
 	}
 
 	~lambda()
