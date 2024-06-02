@@ -2,11 +2,18 @@
 
 #include "slwinapi.hpp"
 
-
-constexpr void *operator new (unsigned long long, void *p)
+#ifndef __PLACEMENT_NEW_INLINE
+#define __PLACEMENT_NEW_INLINE
+constexpr inline void *operator new (unsigned long long, void *p) noexcept
 {
 	return p;
 }
+
+constexpr inline void operator delete(void *, void *) noexcept
+{
+	return;
+}
+#endif // __PLACEMENT_NEW_INLINE
 
 namespace sl
 {
