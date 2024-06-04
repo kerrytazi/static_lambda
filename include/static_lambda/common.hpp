@@ -21,7 +21,8 @@ namespace sl
 const unsigned long long _DESTROY_OFFSET = 64;
 const unsigned long long _SAVE_TARGET_CODE_OFFSET = 128;
 const unsigned long long _SAVE_TARGET_OFFSET = _SAVE_TARGET_CODE_OFFSET + 16;
-const unsigned long long _COPY_OF_ORIGINAL_OFFSET = _SAVE_TARGET_OFFSET + 16;
+const unsigned long long _SAVE_TARGET_SIZE_OFFSET = _SAVE_TARGET_OFFSET + 8;
+const unsigned long long _COPY_OF_ORIGINAL_OFFSET = _SAVE_TARGET_SIZE_OFFSET + 8;
 const unsigned long long _FL_OFFSET = 256;
 
 

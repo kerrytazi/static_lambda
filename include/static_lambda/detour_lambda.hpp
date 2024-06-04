@@ -33,14 +33,11 @@ struct detour
 
 		const unsigned long long min_patch_size = 13;
 
-		alignas(16)
 		unsigned char patch[32] = {
 			// mov rax, <static_lambda>
 			0x48, 0xB8, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7],
 			// jmp rax
 			0xFF, 0xE0,
-
-			// noops
 
 			// pop rax ; needed to restore rax after redirecting from "copy of original" function
 			0x58,
@@ -49,12 +46,9 @@ struct detour
 		unsigned char *tmp = t;
 
 		while (tmp - t < min_patch_size)
-			tmp += ldisasm(t);
+			tmp += ldisasm(tmp);
 
 		unsigned long long code_size = tmp - t;
-
-		if (code_size > 16)
-			__debugbreak(); // TODO
 
 		for (int i = 0; i < code_size - min_patch_size; ++i)
 		{
@@ -69,9 +63,11 @@ struct detour
 
 		auto save_target_code = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_CODE_OFFSET;
 		auto save_target = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_OFFSET;
+		auto save_target_size = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_SIZE_OFFSET;
 
 		_memcpy(save_target_code, t, 16);
-		_memcpy(save_target, &t, 16);
+		_memcpy(save_target, &t, 8);
+		_memcpy(save_target_size, &code_size, 8);
 
 		{
 			unsigned char const *_o = reinterpret_cast<unsigned char const *>(t) + code_size - 1;
@@ -91,7 +87,7 @@ struct detour
 			_memcpy(copy_of_original + code_size, redirect, sizeof(redirect));
 		}
 
-		_slwinapi::_sl_copy_aligned_16(t, patch);
+		_memcpy(t, patch, code_size);
 	}
 
 	~detour()
@@ -100,9 +96,11 @@ struct detour
 		{
 			auto save_target_code = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_CODE_OFFSET;
 			auto save_target = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_OFFSET;
+			auto save_target_size = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_SIZE_OFFSET;
 
 			void *t = *reinterpret_cast<void **>(save_target);
-			_slwinapi::_sl_copy_aligned_16(t, save_target_code);
+			unsigned long long code_size = *reinterpret_cast<unsigned long long *>(save_target_size);
+			_memcpy(t, save_target_code, code_size);
 		}
 	}
 

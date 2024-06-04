@@ -1,12 +1,12 @@
-#include "../static_lambda/static_lambda.hpp"
-#include "../static_lambda/detour_lambda.hpp"
+#include "static_lambda/static_lambda.hpp"
+#include "static_lambda/detour_lambda.hpp"
 
 int target_func(int a, int b)
 {
 	return a + b;
 }
 
-void _start()
+int main()
 {
 	{
 		int c = 10;
