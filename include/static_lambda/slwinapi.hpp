@@ -46,6 +46,7 @@ _sl_NtProtectVirtualMemory(
 );
 
 
+inline
 void *
 _sl_VirtualAlloc(
 	void *lpAddress,
@@ -65,6 +66,7 @@ _sl_VirtualAlloc(
 	return lpAddress;
 }
 
+inline
 int
 _sl_VirtualFree(
 	void *lpAddress,
@@ -81,6 +83,7 @@ _sl_VirtualFree(
 	return result >= 0 ? 1 : 0;
 }
 
+inline
 int
 _sl_VirtualProtect(
 	void *lpAddress,

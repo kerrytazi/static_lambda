@@ -53,6 +53,7 @@ constexpr bool _always_false = false;
 template <typename T>
 constexpr T _declval() { static_assert(_always_false<T>, "declval not allowed in an evaluated context"); }
 
+inline
 void _memcpy(void *dst, void const *src, unsigned long long size)
 {
 	unsigned char *_dst = static_cast<unsigned char *>(dst);
