@@ -12,32 +12,28 @@
 namespace sl
 {
 
+
 template <typename F>
 struct detour
 {
 	template <typename FL>
-	detour(_helper<F>::function_pointer_type target, FL &&func)
-		: _sl{ static_cast<_remove_reference_t<FL> &&>(func), _detour_tag{} }
+	detour(_sl::helper<F>::function_pointer_type target, FL &&func)
+		: _lambda{ _sl::detour_tag<_sl::remove_reference_t<FL>>{} }
 	{
-		unsigned char *t = reinterpret_cast<unsigned char *>(target);
+		unsigned char *t = static_cast<unsigned char *>(_sl::unjump(target));
 
-		while (*t == 0xE9)
-		{
-			int offset = 0;
-			_memcpy(&offset, t + 1, sizeof(offset));
-			t = t + 5 + offset;
-		}
+		_lambda._init<_sl::remove_reference_t<FL>>(static_cast<_sl::remove_reference_t<FL> &&>(func), &_sl::helper<F>::proxy<_sl::remove_reference_t<FL>>::func_detour, t);
 
-		unsigned char const *_s = reinterpret_cast<unsigned char const *>(_sl.get_static_pointer());
-		unsigned char const *s = reinterpret_cast<unsigned char const *>(&_s);
+		unsigned long long lambda_pointer = reinterpret_cast<unsigned long long>(_lambda.get_static_pointer());
+		unsigned long long target_pointer = reinterpret_cast<unsigned long long>(t);
+		unsigned long long _s = lambda_pointer - target_pointer - 5;
+		unsigned char *s = reinterpret_cast<unsigned char *>(&_s);
 
-		const unsigned long long min_patch_size = 13;
+		const unsigned long long min_patch_size = 6;
 
-		unsigned char patch[32] = {
-			// mov rax, <static_lambda>
-			0x48, 0xB8, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7],
-			// jmp rax
-			0xFF, 0xE0,
+		unsigned char patch[16] = {
+			// jmp <lambda_pointer>
+			0xE9, s[0], s[1], s[2], s[3],
 
 			// pop rax ; needed to restore rax after redirecting from "copy of original" function
 			0x58,
@@ -58,16 +54,16 @@ struct detour
 
 		{
 			unsigned old_protection = 0;
-			_slwinapi::_sl_VirtualProtect(t, code_size, _slwinapi::_PAGE_EXECUTE_READWRITE, &old_protection);
+			_slwinapi::_sl_VirtualProtect(t, code_size, _slwinapi::PAGE_EXECUTE_READWRITE, &old_protection);
 		}
 
-		auto save_target_code = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_CODE_OFFSET;
-		auto save_target = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_OFFSET;
-		auto save_target_size = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_SIZE_OFFSET;
+		auto save_target_code = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_CODE_OFFSET;
+		auto save_target = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_OFFSET;
+		auto save_target_size = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_SIZE_OFFSET;
 
-		_memcpy(save_target_code, t, 16);
-		_memcpy(save_target, &t, 8);
-		_memcpy(save_target_size, &code_size, 8);
+		_sl::memcpy(save_target_code, t, 16);
+		_sl::memcpy(save_target, &t, 8);
+		_sl::memcpy(save_target_size, &code_size, 8);
 
 		{
 			unsigned char const *_o = reinterpret_cast<unsigned char const *>(t) + code_size - 1;
@@ -82,29 +78,29 @@ struct detour
 				0xFF, 0xE0,
 			};
 
-			auto copy_of_original = static_cast<unsigned char *>(_sl._mem) + _COPY_OF_ORIGINAL_OFFSET;
-			_memcpy(copy_of_original, t, code_size);
-			_memcpy(copy_of_original + code_size, redirect, sizeof(redirect));
+			auto copy_of_original = static_cast<unsigned char *>(_lambda._mem) + _sl::COPY_OF_ORIGINAL_OFFSET;
+			_sl::memcpy(copy_of_original, t, code_size);
+			_sl::memcpy(copy_of_original + code_size, redirect, sizeof(redirect));
 		}
 
-		_memcpy(t, patch, code_size);
+		_sl::memcpy(t, patch, code_size);
 	}
 
 	~detour()
 	{
-		if (_sl._mem)
+		if (_lambda._mem)
 		{
-			auto save_target_code = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_CODE_OFFSET;
-			auto save_target = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_OFFSET;
-			auto save_target_size = static_cast<unsigned char *>(_sl._mem) + _SAVE_TARGET_SIZE_OFFSET;
+			auto save_target_code = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_CODE_OFFSET;
+			auto save_target = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_OFFSET;
+			auto save_target_size = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_SIZE_OFFSET;
 
 			void *t = *reinterpret_cast<void **>(save_target);
 			unsigned long long code_size = *reinterpret_cast<unsigned long long *>(save_target_size);
-			_memcpy(t, save_target_code, code_size);
+			_sl::memcpy(t, save_target_code, code_size);
 		}
 	}
 
-	lambda<F> _sl;
+	lambda<F> _lambda;
 };
 
 

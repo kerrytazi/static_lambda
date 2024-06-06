@@ -10,10 +10,10 @@ namespace _slwinapi
 {
 
 
-const unsigned _MEM_COMMIT = 0x00001000;
-const unsigned _MEM_RESERVE = 0x00002000;
-const unsigned _PAGE_EXECUTE_READWRITE = 0x40;
-const unsigned _MEM_RELEASE = 0x00008000;
+const unsigned MEM_COMMIT = 0x00001000;
+const unsigned MEM_RESERVE = 0x00002000;
+const unsigned PAGE_EXECUTE_READWRITE = 0x40;
+const unsigned MEM_RELEASE = 0x00008000;
 
 extern "C"
 void *
@@ -43,6 +43,17 @@ _sl_NtProtectVirtualMemory(
 	unsigned long long *dwSize,
 	unsigned flNewProtect,
 	unsigned *lpflOldProtect
+);
+
+extern "C"
+int
+_sl_NtQueryVirtualMemory(
+	void *hProcess,
+	void const *BaseAddress,
+	int MemoryInformationClass,
+	void *MemoryInformation,
+	unsigned long long MemoryInformationLength,
+	unsigned long long *ReturnLength
 );
 
 
@@ -100,6 +111,43 @@ _sl_VirtualProtect(
 	);
 
 	return result >= 0 ? 1 : 0;
+}
+
+struct _sl_MEMORY_BASIC_INFORMATION
+{
+	void *BaseAddress;
+	void *AllocationBase;
+	unsigned AllocationProtect;
+	unsigned short PartitionId;
+	unsigned long long RegionSize;
+	unsigned State;
+	unsigned Protect;
+	unsigned Type;
+};
+
+inline
+unsigned long long
+_sl_VirtualQuery(
+	void const *lpAddress,
+	_sl_MEMORY_BASIC_INFORMATION *lpBuffer,
+	unsigned long long dwLength
+)
+{
+	unsigned long long ResultLength = 0;
+
+	unsigned long long result = _sl_NtQueryVirtualMemory(
+		(void *)-1,
+		lpAddress,
+		0, // MemoryBasicInformation
+		lpBuffer,
+		dwLength,
+		&ResultLength
+	);
+
+	if (result >= 0)
+		return ResultLength;
+
+	return 0;
 }
 
 

@@ -22,6 +22,13 @@ _sl_NtProtectVirtualMemory proc
 	ret
 _sl_NtProtectVirtualMemory endp
 
+_sl_NtQueryVirtualMemory proc
+	mov r10, rcx
+	mov eax, 23h
+	syscall
+	ret
+_sl_NtQueryVirtualMemory endp
+
 _sl_get_rax proc
 	ret
 _sl_get_rax endp
