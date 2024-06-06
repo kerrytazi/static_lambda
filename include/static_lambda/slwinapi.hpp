@@ -10,10 +10,10 @@ namespace _slwinapi
 {
 
 
-const unsigned MEM_COMMIT = 0x00001000;
-const unsigned MEM_RESERVE = 0x00002000;
-const unsigned PAGE_EXECUTE_READWRITE = 0x40;
-const unsigned MEM_RELEASE = 0x00008000;
+const unsigned _MEM_COMMIT = 0x00001000;
+const unsigned _MEM_RESERVE = 0x00002000;
+const unsigned _PAGE_EXECUTE_READWRITE = 0x40;
+const unsigned _MEM_RELEASE = 0x00008000;
 
 extern "C"
 void *

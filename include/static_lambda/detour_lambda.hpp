@@ -54,7 +54,7 @@ struct detour
 
 		{
 			unsigned old_protection = 0;
-			_slwinapi::_sl_VirtualProtect(t, code_size, _slwinapi::PAGE_EXECUTE_READWRITE, &old_protection);
+			_slwinapi::_sl_VirtualProtect(t, code_size, _slwinapi::_PAGE_EXECUTE_READWRITE, &old_protection);
 		}
 
 		auto save_target_code = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_CODE_OFFSET;

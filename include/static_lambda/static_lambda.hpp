@@ -41,15 +41,15 @@ struct lambda
 				_slwinapi::_sl_MEMORY_BASIC_INFORMATION info = {};
 				_slwinapi::_sl_VirtualQuery(static_cast<unsigned char *>(target) + offset, &info, sizeof(info));
 
-				if (info.State & _slwinapi::MEM_COMMIT)
+				if (info.State & _slwinapi::_MEM_COMMIT)
 					continue;
 
-				_mem = _slwinapi::_sl_VirtualAlloc(static_cast<unsigned char *>(target) + offset, _sl::FL_OFFSET + sizeof(_sl::remove_reference_t<FL>), _slwinapi::MEM_COMMIT | _slwinapi::MEM_RESERVE, _slwinapi::PAGE_EXECUTE_READWRITE);
+				_mem = _slwinapi::_sl_VirtualAlloc(static_cast<unsigned char *>(target) + offset, _sl::FL_OFFSET + sizeof(_sl::remove_reference_t<FL>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE);
 			}
 		}
 		else
 		{
-			_mem = _slwinapi::_sl_VirtualAlloc(nullptr, _sl::FL_OFFSET + sizeof(_sl::remove_reference_t<FL>), _slwinapi::MEM_COMMIT | _slwinapi::MEM_RESERVE, _slwinapi::PAGE_EXECUTE_READWRITE);
+			_mem = _slwinapi::_sl_VirtualAlloc(nullptr, _sl::FL_OFFSET + sizeof(_sl::remove_reference_t<FL>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE);
 		}
 
 		unsigned char *ptr = static_cast<unsigned char *>(_mem);
@@ -116,7 +116,7 @@ struct lambda
 		{
 			auto destroy = *reinterpret_cast<void (**)(void *)>(static_cast<unsigned char *>(_mem) + _sl::DESTROY_OFFSET);
 			destroy(static_cast<unsigned char *>(_mem) + _sl::FL_OFFSET);
-			_slwinapi::_sl_VirtualFree(_mem, 0, _slwinapi::MEM_RELEASE);
+			_slwinapi::_sl_VirtualFree(_mem, 0, _slwinapi::_MEM_RELEASE);
 		}
 	}
 
