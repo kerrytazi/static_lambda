@@ -1,6 +1,3 @@
-// Must disable JMC:
-//   Project -> Properties -> C/C++ -> General -> Support Just My Code Debugging -> No.
-
 #pragma once
 
 #include "slwinapi.hpp"
@@ -33,7 +30,9 @@ struct lambda
 	template <typename FL>
 	void _init(FL &&func, void *proxy_func, void *target)
 	{
-		if (target)
+		if (!target)
+			target = proxy_func;
+
 		{
 			for (unsigned long long i = 1; _mem == nullptr; ++i)
 			{
@@ -44,55 +43,37 @@ struct lambda
 				if (info.State & _slwinapi::_MEM_COMMIT)
 					continue;
 
-				_mem = _slwinapi::_sl_VirtualAlloc(static_cast<unsigned char *>(target) + offset, _sl::FL_OFFSET + sizeof(_sl::remove_reference_t<FL>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE);
+				_mem = static_cast<_sl::smem_base *>(_slwinapi::_sl_VirtualAlloc(static_cast<unsigned char *>(target) + offset, sizeof(_sl::smem<_sl::remove_reference_t<FL>>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE));
 			}
 		}
-		else
-		{
-			_mem = _slwinapi::_sl_VirtualAlloc(nullptr, _sl::FL_OFFSET + sizeof(_sl::remove_reference_t<FL>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE);
-		}
-
-		unsigned char *ptr = static_cast<unsigned char *>(_mem);
+		//else
+		//{
+		//	_mem = static_cast<_sl::smem_base *>(_slwinapi::_sl_VirtualAlloc(nullptr, sizeof(_sl::smem<_sl::remove_reference_t<FL>>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE));
+		//}
 
 		{
-			unsigned char const *_t = reinterpret_cast<unsigned char const *>(ptr);
+			unsigned char const *_t = reinterpret_cast<unsigned char const *>(_mem);
 			unsigned char const *t = reinterpret_cast<unsigned char const *>(&_t);
-			unsigned char *_f = static_cast<unsigned char *>(proxy_func);
+			unsigned long long _f = reinterpret_cast<unsigned long long>(proxy_func) - reinterpret_cast<unsigned long long>(_mem->trampoline) - 10 - 5; // size: 10 - mov, 5 - jmp
 			unsigned char *f = reinterpret_cast<unsigned char *>(&_f);
 
 			unsigned char const opcodes[] = {
-				// push rbx ; rbx must be saved by callee (if changed)
-				0x53,
-				// push rbx ; do it twice to align stack to 16
-				0x53,
-
-				// mov rax, <func> ; hidden argument passed in rax (non standard calling convention)
+				// mov rax, <mem> ; hidden argument passed in rax (non standard calling convention)
 				0x48, 0xB8, t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7],
 
-				// mov rbx, <proxy>
-				0x48, 0xBB, f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7],
-
-				// call rbx
-				0xFF, 0xD3,
-
-				// pop rbx ; restore rbx
-				0x5B,
-				// pop rbx ; restore stack alignment
-				0x5B,
-
-				// ret
-				0xC3,
+				// jmp <proxy>
+				0xE9, f[0], f[1], f[2], f[3],
 			};
 
-			_sl::memcpy(ptr, opcodes, sizeof(opcodes));
+			_sl::memcpy(_mem->trampoline, opcodes, sizeof(opcodes));
 		}
 
 		{
-			*reinterpret_cast<void **>(ptr + _sl::DESTROY_OFFSET) = static_cast<void *>(&_sl::helper<F>::proxy<_sl::remove_reference_t<FL>>::destroy);
+			_mem->destroy = static_cast<void (*)(void *)>(static_cast<void *>(&_sl::helper<F>::proxy<_sl::remove_reference_t<FL>>::destroy));
 		}
 
 		{
-			new ((char *)_mem + _sl::FL_OFFSET) _sl::remove_reference_t<FL>(static_cast<_sl::remove_reference_t<FL> &&>(func));
+			new (_mem + 1) _sl::remove_reference_t<FL>(static_cast<_sl::remove_reference_t<FL> &&>(func));
 		}
 	}
 
@@ -114,15 +95,14 @@ struct lambda
 	{
 		if (_mem)
 		{
-			auto destroy = *reinterpret_cast<void (**)(void *)>(static_cast<unsigned char *>(_mem) + _sl::DESTROY_OFFSET);
-			destroy(static_cast<unsigned char *>(_mem) + _sl::FL_OFFSET);
+			_mem->destroy(_mem + 1);
 			_slwinapi::_sl_VirtualFree(_mem, 0, _slwinapi::_MEM_RELEASE);
 		}
 	}
 
-	auto get_static_pointer() const { return static_cast<_sl::helper<F>::function_pointer_type>(_mem); }
+	auto get_static_pointer() const { return static_cast<_sl::helper<F>::function_pointer_type>(static_cast<void *>(_mem->trampoline)); }
 
-	void *_mem = nullptr;
+	_sl::smem_base *_mem = nullptr;
 };
 
 

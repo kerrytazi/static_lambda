@@ -57,13 +57,9 @@ struct detour
 			_slwinapi::_sl_VirtualProtect(t, code_size, _slwinapi::_PAGE_EXECUTE_READWRITE, &old_protection);
 		}
 
-		auto save_target_code = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_CODE_OFFSET;
-		auto save_target = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_OFFSET;
-		auto save_target_size = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_SIZE_OFFSET;
-
-		_sl::memcpy(save_target_code, t, 16);
-		_sl::memcpy(save_target, &t, 8);
-		_sl::memcpy(save_target_size, &code_size, 8);
+		_sl::memcpy(_lambda._mem->save_target_code, t, 16);
+		_lambda._mem->save_target = &t;
+		_lambda._mem->save_target_size = code_size;
 
 		{
 			unsigned char const *_o = reinterpret_cast<unsigned char const *>(t) + code_size - 1;
@@ -78,9 +74,8 @@ struct detour
 				0xFF, 0xE0,
 			};
 
-			auto copy_of_original = static_cast<unsigned char *>(_lambda._mem) + _sl::COPY_OF_ORIGINAL_OFFSET;
-			_sl::memcpy(copy_of_original, t, code_size);
-			_sl::memcpy(copy_of_original + code_size, redirect, sizeof(redirect));
+			_sl::memcpy(_lambda._mem->original, t, code_size);
+			_sl::memcpy(_lambda._mem->original + code_size, redirect, sizeof(redirect));
 		}
 
 		_sl::memcpy(t, patch, code_size);
@@ -90,13 +85,7 @@ struct detour
 	{
 		if (_lambda._mem)
 		{
-			auto save_target_code = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_CODE_OFFSET;
-			auto save_target = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_OFFSET;
-			auto save_target_size = static_cast<unsigned char *>(_lambda._mem) + _sl::SAVE_TARGET_SIZE_OFFSET;
-
-			void *t = *reinterpret_cast<void **>(save_target);
-			unsigned long long code_size = *reinterpret_cast<unsigned long long *>(save_target_size);
-			_sl::memcpy(t, save_target_code, code_size);
+			_sl::memcpy(_lambda._mem->save_target, _lambda._mem->save_target_code, _lambda._mem->save_target_size);
 		}
 	}
 

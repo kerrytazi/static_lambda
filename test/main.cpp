@@ -1,6 +1,16 @@
 #include "static_lambda/static_lambda.hpp"
 #include "static_lambda/detour_lambda.hpp"
 
+struct Vector2
+{
+	float x, y;
+};
+
+bool target_func2(int a, Vector2 v)
+{
+	return v.x + v.y + a > 0;
+}
+
 int target_func(int a, int b)
 {
 	return a + b;
@@ -8,6 +18,25 @@ int target_func(int a, int b)
 
 int main()
 {
+	{
+		int result = target_func2(3, { 1.0f, 2.0f });
+		int tmp = 0;
+	}
+
+	{
+		int c = 1;
+
+		auto replacement = [c](auto original, int a, Vector2 v) -> bool
+		{
+			return original(a, v) ? (c - 1) : (c + 1);
+		};
+
+		sl::detour<bool(int, Vector2)> a(&target_func2, replacement);
+
+		int result = target_func2(3, { 1.0f, 2.0f });
+		int tmp = 0;
+	}
+
 	{
 		int c = 10;
 

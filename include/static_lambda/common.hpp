@@ -19,14 +19,6 @@ namespace _sl
 {
 
 
-const unsigned long long DESTROY_OFFSET = 64;
-const unsigned long long SAVE_TARGET_CODE_OFFSET = 128;
-const unsigned long long SAVE_TARGET_OFFSET = SAVE_TARGET_CODE_OFFSET + 16;
-const unsigned long long SAVE_TARGET_SIZE_OFFSET = SAVE_TARGET_OFFSET + 8;
-const unsigned long long COPY_OF_ORIGINAL_OFFSET = SAVE_TARGET_SIZE_OFFSET + 8;
-const unsigned long long FL_OFFSET = 256;
-
-
 template <typename T>
 struct remove_reference { using type = T; };
 
@@ -80,6 +72,22 @@ void *unjump(void *ptr)
 	return static_cast<void *>(t);
 }
 
+struct smem_base
+{
+	unsigned char trampoline[64];
+	unsigned char original[64];
+	unsigned char save_target_code[64];
+	void *save_target;
+	unsigned long long save_target_size;
+	void (*destroy)(void *fl);
+};
+
+template <typename FL>
+struct smem : smem_base
+{
+	FL func;
+};
+
 template <typename F>
 struct helper;
 
@@ -101,17 +109,15 @@ struct helper<TRet(TArgs...)>
 	{
 		static TRet func(TArgs... args)
 		{
-			unsigned char *ptr = reinterpret_cast<unsigned char *>(_slwinapi::_sl_get_rax());
-			FL *func = reinterpret_cast<FL *>(ptr + FL_OFFSET);
-			return (*func)(args...);
+			smem<FL> *mem = reinterpret_cast<smem<FL> *>(_slwinapi::_sl_get_rax());
+			return mem->func(args...);
 		}
 
 		static TRet func_detour(TArgs... args)
 		{
-			unsigned char *mem = reinterpret_cast<unsigned char *>(_slwinapi::_sl_get_rax());
-			FL *func = reinterpret_cast<FL *>(mem + FL_OFFSET);
-			function_pointer_type original = reinterpret_cast<function_pointer_type>(mem + COPY_OF_ORIGINAL_OFFSET);
-			return (*func)(original, args...);
+			smem<FL> *mem = reinterpret_cast<smem<FL> *>(_slwinapi::_sl_get_rax());
+			function_pointer_type original = static_cast<function_pointer_type>(static_cast<void *>(mem->original));
+			return mem->func(original, args...);
 		}
 
 		static void destroy(FL *func)

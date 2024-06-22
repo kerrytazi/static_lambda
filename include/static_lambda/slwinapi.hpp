@@ -1,9 +1,3 @@
-// Must enable MASM to compile slwinapi.asm
-//   Project dependencies:
-//     Project -> Build Dependencies -> Build Customizations... -> masm (checkbox on)
-//   File slwinapi.asm:
-//     File -> Properties -> General -> Item Type -> Microsoft Macro Assembler
-
 #pragma once
 
 namespace _slwinapi
