@@ -46,10 +46,6 @@ struct lambda
 				_mem = static_cast<_sl::smem_base *>(_slwinapi::_sl_VirtualAlloc(static_cast<unsigned char *>(target) + offset, sizeof(_sl::smem<_sl::remove_reference_t<FL>>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE));
 			}
 		}
-		//else
-		//{
-		//	_mem = static_cast<_sl::smem_base *>(_slwinapi::_sl_VirtualAlloc(nullptr, sizeof(_sl::smem<_sl::remove_reference_t<FL>>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE));
-		//}
 
 		{
 			unsigned char const *_t = reinterpret_cast<unsigned char const *>(_mem);
