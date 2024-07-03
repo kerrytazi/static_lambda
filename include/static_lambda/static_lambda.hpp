@@ -1,7 +1,7 @@
 #pragma once
 
-#include "slwinapi.hpp"
 #include "common.hpp"
+#include "sysapi.hpp"
 
 namespace sl
 {
@@ -33,23 +33,9 @@ struct lambda
 		if (!target)
 			target = proxy_func;
 
-		{
-			for (unsigned long long i = 1; _mem == nullptr; ++i)
-			{
-				unsigned long long offset = i * 32 * 1024 * 1024;
-				_slwinapi::_sl_MEMORY_BASIC_INFORMATION info = {};
-				_slwinapi::_sl_VirtualQuery(static_cast<unsigned char *>(target) + offset, &info, sizeof(info));
+		auto alloc_size = sizeof(_sl::smem<_sl::remove_reference_t<FL>>);
 
-				if (info.State & _slwinapi::_MEM_COMMIT)
-					continue;
-
-				_mem = static_cast<_sl::smem_base *>(_slwinapi::_sl_VirtualAlloc(static_cast<unsigned char *>(target) + offset, sizeof(_sl::smem<_sl::remove_reference_t<FL>>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE));
-			}
-		}
-		//else
-		//{
-		//	_mem = static_cast<_sl::smem_base *>(_slwinapi::_sl_VirtualAlloc(nullptr, sizeof(_sl::smem<_sl::remove_reference_t<FL>>), _slwinapi::_MEM_COMMIT | _slwinapi::_MEM_RESERVE, _slwinapi::_PAGE_EXECUTE_READWRITE));
-		//}
+		_mem = static_cast<_sl::smem_base *>(_sl::_alloc(static_cast<unsigned char *>(target), alloc_size));
 
 		{
 			unsigned char const *_t = reinterpret_cast<unsigned char const *>(_mem);
@@ -68,26 +54,24 @@ struct lambda
 			_sl::memcpy(_mem->trampoline, opcodes, sizeof(opcodes));
 		}
 
-		{
-			_mem->destroy = static_cast<void (*)(void *)>(static_cast<void *>(&_sl::helper<F>::proxy<_sl::remove_reference_t<FL>>::destroy));
-		}
+		_mem->alloc_size = alloc_size;
 
-		{
-			new (_mem + 1) _sl::remove_reference_t<FL>(static_cast<_sl::remove_reference_t<FL> &&>(func));
-		}
+		_mem->destroy = reinterpret_cast<void (*)(void *)>(reinterpret_cast<void *>(&_sl::helper<F>::template proxy<_sl::remove_reference_t<FL>>::destroy));
+
+		_sl::construct_at<_sl::remove_reference_t<FL>>(_mem + 1, static_cast<_sl::remove_reference_t<FL> &&>(func));
 	}
 
 	template <typename FL>
 	lambda(FL &&func)
 	{
-		static_assert(_sl::helper<F>{}.is_compatible<_sl::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
-		_init<_sl::remove_reference_t<FL>>(static_cast<_sl::remove_reference_t<FL> &&>(func), &_sl::helper<F>::proxy<_sl::remove_reference_t<FL>>::func, nullptr);
+		static_assert(_sl::helper<F>::template is_compatible<_sl::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
+		_init<_sl::remove_reference_t<FL>>(static_cast<_sl::remove_reference_t<FL> &&>(func), reinterpret_cast<void *>(&_sl::helper<F>::template proxy<_sl::remove_reference_t<FL>>::func), nullptr);
 	}
 
 	template <typename FL>
 	lambda(_sl::detour_tag<FL> &&)
 	{
-		static_assert(_sl::helper<F>{}.is_compatible_detour<_sl::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
+		static_assert(_sl::helper<F>::template is_compatible_detour<_sl::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
 		// init later
 	}
 
@@ -96,11 +80,11 @@ struct lambda
 		if (_mem)
 		{
 			_mem->destroy(_mem + 1);
-			_slwinapi::_sl_VirtualFree(_mem, 0, _slwinapi::_MEM_RELEASE);
+			_sl::_free(_mem, _mem->alloc_size);
 		}
 	}
 
-	auto get_static_pointer() const { return static_cast<_sl::helper<F>::function_pointer_type>(static_cast<void *>(_mem->trampoline)); }
+	auto get_static_pointer() const { return reinterpret_cast<_sl::helper<F>::function_pointer_type>(static_cast<void *>(_mem->trampoline)); }
 
 	_sl::smem_base *_mem = nullptr;
 };

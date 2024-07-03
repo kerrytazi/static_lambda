@@ -1,0 +1,67 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "dockerDebugBuild",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"run",
+				"-it",
+				"--rm",
+				"--name",
+					"static_lambda-dockerDebugBuild",
+				"-v",
+					"${workspaceFolder}:/project",
+				"clang-lldb-image",
+				"/usr/bin/bash",
+					"-c",
+					"mkdir -p build_linux/Debug && cd build_linux/Debug && cmake -Dtest=1 -DCMAKE_BUILD_TYPE=Debug ../.. && cmake --build ."
+			],
+		},
+		{
+			"label": "dockerDebugLLDB",
+			"type": "shell",
+			"isBackground": true,
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "",
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^",
+					"endsPattern": "lldb-server-local_build",
+				},
+			},
+			"command": "docker",
+			"args": [
+				"run",
+				"-it",
+				"--rm",
+				"--name",
+					"static_lambda-dockerDebugLLDB",
+				"--privileged",
+				"--cap-add=SYS_PTRACE",
+				"--security-opt",
+					"seccomp=unconfined",
+				"-p",
+					"1234:1234",
+				"-v",
+					"${workspaceFolder}:/project",
+				"clang-lldb-image",
+				"lldb-server",
+					"gdbserver",
+					"*:1234",
+					"build_linux/Debug/static_lambda_test",
+			],
+		},
+		{
+			"label": "dockerDebug",
+			"dependsOn": [
+				"dockerDebugBuild",
+				"dockerDebugLLDB",
+			],
+			"dependsOrder": "sequence",
+		},
+	],
+}

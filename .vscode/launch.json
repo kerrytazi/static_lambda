@@ -1,0 +1,32 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Remote attach",
+			"type": "lldb",
+			"request": "custom",
+			"targetCreateCommands": [
+				"target create ${workspaceFolder}/build_linux/Debug/static_lambda_test",
+			],
+			"processCreateCommands": [
+				"gdb-remote 127.0.0.1:1234",
+			],
+			"sourceMap": {
+				"/project" : "${input:workspaceFolderWindows}",
+			},
+			"preLaunchTask": "dockerDebug",
+		},
+	],
+	"inputs": [
+		{
+			"id": "workspaceFolderWindows",
+			"type": "command",
+			"command": "extension.commandvariable.transform",
+			"args": {
+				"text": "${workspaceFolder}",
+				"find": "([A-Z]:\\\\)",
+				"replace": "\\L$1",
+			},
+		},
+	],
+}

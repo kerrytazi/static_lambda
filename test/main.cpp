@@ -1,6 +1,8 @@
 #include "static_lambda/static_lambda.hpp"
 #include "static_lambda/detour_lambda.hpp"
 
+#include <iostream>
+
 struct Vector2
 {
 	float x, y;
@@ -19,7 +21,14 @@ int target_func(int a, int b)
 int main()
 {
 	{
+		int result = target_func(3, 5);
+		std::cout << "target_func: " << result << "\n";
+		int tmp = 0;
+	}
+
+	{
 		int result = target_func2(3, { 1.0f, 2.0f });
+		std::cout << "target_func2: " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -34,6 +43,7 @@ int main()
 		sl::detour<bool(int, Vector2)> a(&target_func2, replacement);
 
 		int result = target_func2(3, { 1.0f, 2.0f });
+		std::cout << "target_func2: " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -48,6 +58,7 @@ int main()
 		sl::detour<int(int, int)> a(&target_func, replacement);
 
 		int result = target_func(3, 5);
+		std::cout << "target_func: " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -58,6 +69,7 @@ int main()
 		int (*ptr)(int, int) = a.get_static_pointer();
 
 		int result = ptr(3, 5);
+		std::cout << "target_func: " << result << "\n";
 		int tmp = 0;
 	}
 }

@@ -4,3 +4,4 @@ Win32
 Debug
 Release
 build
+build_linux

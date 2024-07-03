@@ -9,7 +9,7 @@ Helps convert C++ lambdas with captures to function pointers.
 Lightweight way to convert lambdas to function pointers.
 
 Current limitations:
-- windows x86_64 only
+- windows/linux x86_64 only
 - no copy-constructor
 
 ```cpp
@@ -21,7 +21,7 @@ sl::lambda<int(int, int)> a([c](int a, int b) -> int { return a + b + c; });
 
 int (*ptr)(int, int) = a.get_static_pointer();
 
-int result = ptr(3, 5);
+int result = ptr(3, 5); // 3 + 5 + 10 = 18
 ```
 
 # detour_lambda
@@ -32,7 +32,7 @@ Lightweight way to detour functions with lambdas.
 
 Current limitations:
 - UNSAFE AS F***
-- windows x86_64 only
+- windows/linux x86_64 only
 - no copy-constructor
 
 
@@ -55,7 +55,7 @@ auto replacement = [c](auto original, int a, int b) -> int
 
 sl::detour<int(int, int)> a(&target_func, replacement);
 
-int result = target_func(3, 5);
+int result = target_func(3, 5); // 3 + 5 + 10 = 18
 ```
 
 # Requirements (Visual Studio)
