@@ -13,7 +13,7 @@ Current limitations:
 - no copy-constructor
 
 ```cpp
-#include "static_lambda.hpp"
+#include "static_lambda/static_lambda.hpp"
 ```
 ```cpp
 int c = 10;
@@ -37,7 +37,7 @@ Current limitations:
 
 
 ```cpp
-#include "detour_lambda.hpp"
+#include "static_lambda/detour_lambda.hpp"
 ```
 ```cpp
 int target_func(int a, int b)
