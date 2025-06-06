@@ -4,6 +4,14 @@
 #include "static_lambda.hpp"
 #include "ldisasm.hpp"
 
+extern "C"
+void* __stdcall DetourCopyInstructionX64(void* pDst,
+                                   void** ppDstPool,
+                                   void* pSrc,
+                                   void** ppTarget,
+                                   long* plExtra);
+
+bool detour_does_code_end_function(unsigned char* pbCode);
 
 namespace sl
 {
@@ -16,14 +24,15 @@ struct detour
 	detour(_sl::helper<F>::function_pointer_type target, FL &&func)
 		: _lambda{ _sl::detour_tag<_sl::remove_reference_t<FL>>{} }
 	{
-		unsigned char *t = static_cast<unsigned char *>(_sl::unjump(reinterpret_cast<void *>(target)));
+		unsigned char* t = static_cast<unsigned char*>(_sl::unjump(reinterpret_cast<void*>(target)));
 
-		_lambda.template _init<_sl::remove_reference_t<FL>>(static_cast<_sl::remove_reference_t<FL> &&>(func), reinterpret_cast<void *>(&_sl::helper<F>::template proxy<_sl::remove_reference_t<FL>>::func_detour), static_cast<void *>(t));
+		_lambda.template _init<_sl::remove_reference_t<FL>>(static_cast<_sl::remove_reference_t<FL> &&>(func), reinterpret_cast<void*>(&_sl::helper<F>::template proxy<_sl::remove_reference_t<FL>>::func_detour), static_cast<void*>(t));
 
 		unsigned long long lambda_pointer = reinterpret_cast<unsigned long long>(_lambda.get_static_pointer());
+
 		unsigned long long target_pointer = reinterpret_cast<unsigned long long>(t);
 		unsigned long long _s = lambda_pointer - target_pointer - 5;
-		unsigned char *s = reinterpret_cast<unsigned char *>(&_s);
+		unsigned char* s = reinterpret_cast<unsigned char*>(&_s);
 
 		const unsigned long long min_patch_size = 5;
 
@@ -32,7 +41,7 @@ struct detour
 			0xE9, s[0], s[1], s[2], s[3],
 		};
 
-		unsigned char *tmp = t;
+		unsigned char* tmp = t;
 
 		while (tmp - t < min_patch_size)
 			tmp += ldisasm(tmp);
@@ -55,14 +64,41 @@ struct detour
 
 		{
 			unsigned long long _s = reinterpret_cast<unsigned long long>(t) - reinterpret_cast<unsigned long long>(_lambda._mem->original) - 5;
-			unsigned char *s = reinterpret_cast<unsigned char *>(&_s);
+			unsigned char* s = reinterpret_cast<unsigned char* >(&_s);
 
 			unsigned char const redirect[] = {
 				// jmp <continue of original>
 				0xE9, s[0], s[1], s[2], s[3],
 			};
 
-			_sl::memcpy(_lambda._mem->original, t, code_size);
+			if (true)
+			{
+				unsigned char* pbSrc = (unsigned char*)t; // pbTarget;
+				unsigned char* pbTrampoline = (unsigned char*)_lambda._mem->original; // pTrampoline->rbCode;
+				unsigned long long cbTarget = 0;
+				unsigned long long cbJump = 5; // SIZE_OF_JMP;
+				unsigned long long nAlign = 0;
+
+				while (cbTarget < cbJump)
+				{
+					unsigned char* pbOp = pbSrc;
+					long lExtra = 0;
+
+					pbSrc = (unsigned char*)DetourCopyInstructionX64(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
+
+					pbTrampoline += (pbSrc - pbOp) + lExtra;
+					cbTarget = (unsigned long long)(pbSrc - (unsigned char*)t);
+
+					if (detour_does_code_end_function(pbOp)) {
+						break;
+					}
+				}
+			}
+			else
+			{
+				_sl::memcpy(_lambda._mem->original, t, code_size);
+			}
+
 			_sl::memcpy(_lambda._mem->original + code_size, redirect, sizeof(redirect));
 		}
 

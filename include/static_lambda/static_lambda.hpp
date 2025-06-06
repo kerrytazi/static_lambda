@@ -35,13 +35,13 @@ struct lambda
 
 		auto alloc_size = sizeof(_sl::smem<_sl::remove_reference_t<FL>>);
 
-		_mem = static_cast<_sl::smem_base *>(_sl::_alloc(static_cast<unsigned char *>(target), alloc_size));
+		_mem = static_cast<_sl::smem_base *>(_sl::_alloc(static_cast<unsigned char* >(target), alloc_size));
 
 		{
 			unsigned char const *_t = reinterpret_cast<unsigned char const *>(_mem);
 			unsigned char const *t = reinterpret_cast<unsigned char const *>(&_t);
 			unsigned long long _f = reinterpret_cast<unsigned long long>(proxy_func) - reinterpret_cast<unsigned long long>(_mem->trampoline) - 10 - 5; // size: 10 - mov, 5 - jmp
-			unsigned char *f = reinterpret_cast<unsigned char *>(&_f);
+			unsigned char* f = reinterpret_cast<unsigned char* >(&_f);
 
 			unsigned char const opcodes[] = {
 				// mov rax, <mem> ; hidden argument passed in rax (non standard calling convention)

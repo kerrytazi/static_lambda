@@ -8,6 +8,14 @@ struct Vector2
 	float x, y;
 };
 
+int g_val1 = 7;
+int g_val2 = 11;
+
+int target_func3(int a, int b)
+{
+	return g_val1 + a + b + g_val2;
+}
+
 bool target_func2(int a, Vector2 v)
 {
 	return v.x + v.y + a > 0;
@@ -70,6 +78,25 @@ int main()
 
 		int result = ptr(3, 5);
 		std::cout << "target_func: " << result << "\n";
+		int tmp = 0;
+	}
+
+	{
+		int c = 10;
+
+		auto replacement = [c](auto original, int a, int b) -> int
+		{
+			return original(a, b) + c;
+		};
+
+		int(*volatile target)(int, int) = &target_func3;
+
+		std::cout << "target_func3 before: " << target(3, 5) << "\n";
+
+		sl::detour<int(int, int)> a(target, replacement);
+
+		int result = target(3, 5);
+		std::cout << "target_func3 after:  " << result << "\n";
 		int tmp = 0;
 	}
 }

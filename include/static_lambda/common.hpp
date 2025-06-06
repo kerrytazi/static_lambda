@@ -119,7 +119,7 @@ inline CAligned align_mem_down_to(void *mem, unsigned long long size, unsigned l
 inline
 void memcpy(void *dst, void const *src, unsigned long long size)
 {
-	unsigned char *_dst = static_cast<unsigned char *>(dst);
+	unsigned char* _dst = static_cast<unsigned char* >(dst);
 	unsigned char const *_src = static_cast<unsigned char const *>(src);
 	unsigned char const *end = _src + size;
 
@@ -130,7 +130,7 @@ void memcpy(void *dst, void const *src, unsigned long long size)
 inline
 void *unjump(void *ptr)
 {
-	unsigned char *t = static_cast<unsigned char *>(ptr);
+	unsigned char* t = static_cast<unsigned char* >(ptr);
 
 	while (*t == 0xE9)
 	{
