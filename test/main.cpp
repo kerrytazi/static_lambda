@@ -30,13 +30,13 @@ int main()
 {
 	{
 		int result = target_func(3, 5);
-		std::cout << "target_func: " << result << "\n";
+		std::cout << "target_func (8): " << result << "\n";
 		int tmp = 0;
 	}
 
 	{
 		int result = target_func2(3, { 1.0f, 2.0f });
-		std::cout << "target_func2: " << result << "\n";
+		std::cout << "target_func2 (1): " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -48,10 +48,12 @@ int main()
 			return original(a, v) ? (c - 1) : (c + 1);
 		};
 
-		sl::detour<bool(int, Vector2)> a(&target_func2, replacement);
+		bool(*volatile target)(int, Vector2) = &target_func2;
 
-		int result = target_func2(3, { 1.0f, 2.0f });
-		std::cout << "target_func2: " << result << "\n";
+		sl::detour<bool(int, Vector2)> a(target, replacement);
+
+		int result = target(3, { 1.0f, 2.0f });
+		std::cout << "target_func2 (0): " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -63,10 +65,12 @@ int main()
 			return original(a, b) + c;
 		};
 
-		sl::detour<int(int, int)> a(&target_func, replacement);
+		int(*volatile target)(int, int) = &target_func;
 
-		int result = target_func(3, 5);
-		std::cout << "target_func: " << result << "\n";
+		sl::detour<int(int, int)> a(target, replacement);
+
+		int result = target(3, 5);
+		std::cout << "target_func (18): " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -77,7 +81,7 @@ int main()
 		int (*ptr)(int, int) = a.get_static_pointer();
 
 		int result = ptr(3, 5);
-		std::cout << "target_func: " << result << "\n";
+		std::cout << "target_func (18): " << result << "\n";
 		int tmp = 0;
 	}
 
@@ -91,12 +95,12 @@ int main()
 
 		int(*volatile target)(int, int) = &target_func3;
 
-		std::cout << "target_func3 before: " << target(3, 5) << "\n";
+		std::cout << "target_func3 before (26): " << target(3, 5) << "\n";
 
 		sl::detour<int(int, int)> a(target, replacement);
 
 		int result = target(3, 5);
-		std::cout << "target_func3 after:  " << result << "\n";
+		std::cout << "target_func3 after  (36): " << result << "\n";
 		int tmp = 0;
 	}
 }

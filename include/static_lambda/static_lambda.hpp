@@ -3,6 +3,10 @@
 #include "common.hpp"
 #include "sysapi.hpp"
 
+#include <new>
+#include <utility>
+#include <cstring>
+
 namespace sl
 {
 
@@ -10,16 +14,16 @@ namespace sl
 template <typename F>
 struct lambda
 {
-	lambda(lambda const &) = delete;
-	lambda &operator = (lambda const &) = delete;
+	lambda(const lambda&) = delete;
+	lambda& operator=(const lambda&) = delete;
 
-	lambda(lambda &&other)
+	lambda(lambda&& other)
 	{
 		_mem = other._mem;
 		other._mem = nullptr;
 	}
 
-	lambda &operator = (lambda &&other)
+	lambda& operator=(lambda&& other)
 	{
 		auto tmp = _mem;
 		_mem = other._mem;
@@ -28,20 +32,20 @@ struct lambda
 	}
 
 	template <typename FL>
-	void _init(FL &&func, void *proxy_func, void *target)
+	void _init(FL&& func, void* proxy_func, void* target)
 	{
 		if (!target)
 			target = proxy_func;
 
-		auto alloc_size = sizeof(_sl::smem<_sl::remove_reference_t<FL>>);
+		auto alloc_size = sizeof(_sl::smem<std::remove_reference_t<FL>>);
 
-		_mem = static_cast<_sl::smem_base *>(_sl::_alloc(static_cast<unsigned char* >(target), alloc_size));
+		_mem = static_cast<_sl::smem_base*>(_sl::_alloc(target, alloc_size));
 
 		{
-			unsigned char const *_t = reinterpret_cast<unsigned char const *>(_mem);
-			unsigned char const *t = reinterpret_cast<unsigned char const *>(&_t);
-			unsigned long long _f = reinterpret_cast<unsigned long long>(proxy_func) - reinterpret_cast<unsigned long long>(_mem->trampoline) - 10 - 5; // size: 10 - mov, 5 - jmp
-			unsigned char* f = reinterpret_cast<unsigned char* >(&_f);
+			const uint8_t* _t = reinterpret_cast<const uint8_t*>(_mem);
+			const uint8_t* t = reinterpret_cast<const uint8_t*>(&_t);
+			size_t _f = reinterpret_cast<size_t>(proxy_func) - reinterpret_cast<size_t>(_mem->trampoline) - 10 - 5; // size: 10 - mov, 5 - jmp
+			uint8_t* f = reinterpret_cast<uint8_t*>(&_f);
 
 			unsigned char const opcodes[] = {
 				// mov rax, <mem> ; hidden argument passed in rax (non standard calling convention)
@@ -51,27 +55,27 @@ struct lambda
 				0xE9, f[0], f[1], f[2], f[3],
 			};
 
-			_sl::memcpy(_mem->trampoline, opcodes, sizeof(opcodes));
+			memcpy(_mem->trampoline, opcodes, sizeof(opcodes));
 		}
 
 		_mem->alloc_size = alloc_size;
 
-		_mem->destroy = reinterpret_cast<void (*)(void *)>(reinterpret_cast<void *>(&_sl::helper<F>::template proxy<_sl::remove_reference_t<FL>>::destroy));
+		_mem->destroy = reinterpret_cast<void (*)(void*)>(reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::destroy));
 
-		_sl::construct_at<_sl::remove_reference_t<FL>>(_mem + 1, static_cast<_sl::remove_reference_t<FL> &&>(func));
+		new (_mem + 1) FL(std::move(func));
 	}
 
 	template <typename FL>
-	lambda(FL &&func)
+	lambda(FL&& func)
 	{
-		static_assert(_sl::helper<F>::template is_compatible<_sl::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
-		_init<_sl::remove_reference_t<FL>>(static_cast<_sl::remove_reference_t<FL> &&>(func), reinterpret_cast<void *>(&_sl::helper<F>::template proxy<_sl::remove_reference_t<FL>>::func), nullptr);
+		static_assert(_sl::helper<F>::template is_compatible<std::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
+		_init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL>&&>(func), reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func), nullptr);
 	}
 
 	template <typename FL>
-	lambda(_sl::detour_tag<FL> &&)
+	lambda(_sl::detour_tag<FL>&&)
 	{
-		static_assert(_sl::helper<F>::template is_compatible_detour<_sl::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
+		static_assert(_sl::helper<F>::template is_compatible_detour<std::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
 		// init later
 	}
 
@@ -84,9 +88,12 @@ struct lambda
 		}
 	}
 
-	auto get_static_pointer() const { return reinterpret_cast<_sl::helper<F>::function_pointer_type>(static_cast<void *>(_mem->trampoline)); }
+	auto get_static_pointer() const
+	{
+		return reinterpret_cast<_sl::helper<F>::function_pointer_type>(static_cast<void*>(_mem->trampoline));
+	}
 
-	_sl::smem_base *_mem = nullptr;
+	_sl::smem_base* _mem = nullptr;
 };
 
 

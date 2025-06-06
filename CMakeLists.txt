@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_SOURCES
-	include/static_lambda/ldisasm.hpp
-	src/ldisasm.cpp
 	src/disasm.cpp
 
 	include/static_lambda/sysapi.hpp
@@ -21,17 +19,12 @@ set(PROJECT_SOURCES
 if(WIN32)
 	enable_language(ASM_MASM)
 	list(APPEND PROJECT_SOURCES
-		include/static_lambda/slwinapi.hpp
 		src/slwinapi.asm
 	)
 
 	if(NOT MSVC)
 		message(FATAL_ERROR "Only msvc is supported on Windows")
 	endif()
-elseif(UNIX)
-	list(APPEND PROJECT_SOURCES
-		include/static_lambda/slunixapi.hpp
-	)
 endif()
 
 
@@ -44,7 +37,7 @@ if(MSVC)
 	target_compile_options(static_lambda PRIVATE "/JMC-")
 endif()
 
-# cmake -DCCALL_TEST=ON -B build
+# cmake -DSTATIC_LAMBDA_TEST=ON -B build
 option(STATIC_LAMBDA_TEST "Build static-lambda test project" OFF)
 
 if(STATIC_LAMBDA_TEST)
@@ -53,12 +46,12 @@ if(STATIC_LAMBDA_TEST)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT static_lambda_test)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-		target_compile_options(static_lambda_test PUBLIC
-			$<$<CONFIG:Debug>:-O0 -g>
-			$<$<CONFIG:MinSizeRel>:-Os -s>
-			$<$<CONFIG:Release>:-O2 -s>
-			$<$<CONFIG:RelWithDebInfo>:-O2 -g>
-		)
-	endif()
+	#if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+	#	target_compile_options(static_lambda_test PUBLIC
+	#		$<$<CONFIG:Debug>:-O0 -g>
+	#		$<$<CONFIG:MinSizeRel>:-Os -s>
+	#		$<$<CONFIG:Release>:-O2 -s>
+	#		$<$<CONFIG:RelWithDebInfo>:-O2 -g>
+	#	)
+	#endif()
 endif()

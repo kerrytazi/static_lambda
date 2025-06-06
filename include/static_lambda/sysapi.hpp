@@ -1,13 +1,16 @@
 #pragma once
 
+#include <cstdint>
+#include <cstddef>
+
 namespace _sl
 {
 
 
-unsigned long long _get_rax();
-void *_alloc(void *target, unsigned long long size);
-void _free(void *ptr, unsigned long long size);
-void _protect(void *ptr, unsigned long long size);
+size_t _get_rax();
+void* _alloc(void* target, size_t size);
+void _free(void* ptr, size_t size);
+void _protect(void* ptr, size_t size);
 
 
 } // namespace _sl
