@@ -3,7 +3,11 @@ Helps convert C++ lambdas with captures to function pointers.
 # Contents
 - [static_lambda](#static_lambda)
 - [detour_lambda](#detour_lambda)
-- [Requirements](#requirements-visual-studio)
+- [How to import](#how-to-import)
+- [Build test project](#build-test-project)
+  - [Linux](#linux)
+  - [Windows (Visual Studio)](#windows-visual-studio)
+- [Currently supported platforms](#currently-supported-platforms)
 
 # static_lambda
 Lightweight way to convert lambdas to function pointers.
@@ -58,18 +62,36 @@ sl::detour<int(int, int)> a(&target_func, replacement);
 int result = target_func(3, 5); // 3 + 5 + 10 = 18
 ```
 
-# Requirements (Visual Studio)
-- [c++ 20](#c-20)
-- [Enable masm](#enable-masm)
-- [Disable JMC](#disable-jmc)
+# How to import
 
-## c++ 20
-Project -> Properties -> Configuration Properties -> General -> C++ Language Standart -> ISO C++20 Standard (/std:c++20)
+Go to your project directory
+```
+cd myproject
+```
 
-## Enable masm
-Project -> Build Dependencies -> Build Customizations... -> masm (checkbox on)
+git clone
+```
+git clone https://github.com/kerrytazi/static_lambda.git lib/ccall
+```
 
-File slwinapi.asm -> Properties -> General -> Item Type -> Microsoft Macro Assembler
+Add to you CMakeLists.txt
+```
+add_subdirectory(lib/static_lambda)
+target_link_libraries(myproject static_lambda)
+```
 
-## Disable JMC
-Project -> Properties -> Configuration Properties -> C/C++ -> General -> Support Just My Code Debugging -> No
+# Build test project
+## Linux
+```
+cmake -DSTATIC_LAMBDA_TEST=ON -B out
+cmake --build out
+```
+## Windows (Visual Studio)
+
+Add `cmake` component via `Visual Studio Installer`.
+
+'Open a local folder' in root.
+
+# Currently supported platforms
+- Windows x86_64
+- Linux x86_64 (amd64)
