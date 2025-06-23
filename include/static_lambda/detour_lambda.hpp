@@ -11,12 +11,12 @@ template <typename F>
 struct detour
 {
 	template <typename FL>
-	detour(_sl::helper<F>::function_pointer_type target, FL &&func)
+	detour(auto target, FL&& func)
 		: _lambda{ _sl::detour_tag<std::remove_reference_t<FL>>{} }
 	{
-		uint8_t* t = static_cast<uint8_t*>(_sl::unjump(reinterpret_cast<void*>(target)));
+		const uint8_t* t = static_cast<const uint8_t*>(_sl::unjump((const void*)target));
 
-		_lambda.template _init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL> &&>(func), reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func_detour), static_cast<void*>(t));
+		_lambda.template _init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL> &&>(func), reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func_detour), static_cast<const void*>(t));
 
 		size_t lambda_pointer = reinterpret_cast<size_t>(_lambda.get_static_pointer());
 
@@ -43,17 +43,17 @@ struct detour
 			};
 
 			{
-				uint8_t* pbSrc = t;
+				const uint8_t* pbSrc = t;
 				uint8_t* pbTrampoline = _lambda._mem->original;
 
 				while (pbSrc - t < min_patch_size)
 				{
-					uint8_t* pbOp = pbSrc;
+					const uint8_t* pbOp = pbSrc;
 					long lExtra = 0;
 
-					pbSrc = (uint8_t*)_sl::_DetourCopyInstructionX64(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
+					pbSrc = (const uint8_t*)_sl::_DetourCopyInstructionX64(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
 
-					pbTrampoline += (pbSrc - pbOp) + lExtra;
+					pbTrampoline += (pbSrc - pbOp); // + lExtra; // FIXME
 
 					if (_sl::_detour_does_code_end_function(pbOp))
 						break;
@@ -65,30 +65,34 @@ struct detour
 					if (*pbSrc == 0xCC || *pbSrc == 0x90) // int3, nop
 					{
 						*pbTrampoline++ = *pbSrc++;
+						continue;
 					}
+
+					break;
 				}
 
 				code_size = pbSrc - t;
 			}
 
+			if (code_size < min_patch_size)
+				throw 1;
+
 			memcpy(_lambda._mem->original + code_size, redirect, sizeof(redirect));
 		}
 
 		for (int i = 0; i < code_size - min_patch_size; ++i)
-		{
 			patch[min_patch_size + i] = 0x90; // noop
-		}
 
 		{
 			auto [prot_mem, prot_size] = _sl::align_mem_down_to(t, code_size, 4096);
-			_sl::_protect(prot_mem, prot_size);
+			_sl::_protect((void*)prot_mem, prot_size);
 		}
 
 		memcpy(_lambda._mem->save_target_code, t, code_size);
-		_lambda._mem->save_target = t;
+		_lambda._mem->save_target = (void*)t;
 		_lambda._mem->save_target_size = code_size;
 
-		memcpy(t, patch, code_size);
+		memcpy((void*)t, patch, code_size);
 	}
 
 	~detour()

@@ -76,6 +76,23 @@ int main()
 
 	{
 		int c = 10;
+
+		auto replacement = [c](auto original, int a, int b) -> int
+		{
+			return original(a, b) + c;
+		};
+
+		volatile void* target_tmp = (void*)&target_func;
+		sl::detour<int(int, int)> a(target_tmp, replacement);
+
+		int(* volatile target)(int, int) = &target_func;
+		int result = ((int(*volatile)(int, int))target)(3, 5);
+		std::cout << "target_func (18): " << result << "\n";
+		int tmp = 0;
+	}
+
+	{
+		int c = 10;
 		sl::lambda<int(int, int)> a([c](int a, int b) -> int { return a + b + c; });
 
 		int (*ptr)(int, int) = a.get_static_pointer();

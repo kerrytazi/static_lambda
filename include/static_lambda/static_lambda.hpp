@@ -32,30 +32,39 @@ struct lambda
 	}
 
 	template <typename FL>
-	void _init(FL&& func, void* proxy_func, void* target)
+	void _init(FL&& func, const void* proxy_func, const void* target)
 	{
 		if (!target)
 			target = proxy_func;
 
-		auto alloc_size = sizeof(_sl::smem<std::remove_reference_t<FL>>);
+		size_t alloc_size = sizeof(_sl::smem<std::remove_reference_t<FL>>);
 
 		_mem = static_cast<_sl::smem_base*>(_sl::_alloc(target, alloc_size));
 
 		{
-			const uint8_t* _t = reinterpret_cast<const uint8_t*>(_mem);
-			const uint8_t* t = reinterpret_cast<const uint8_t*>(&_t);
-			size_t _f = reinterpret_cast<size_t>(proxy_func) - reinterpret_cast<size_t>(_mem->trampoline) - 10 - 5; // size: 10 - mov, 5 - jmp
-			uint8_t* f = reinterpret_cast<uint8_t*>(&_f);
+			const uint8_t* pbSrc = static_cast<const uint8_t*>(proxy_func);
+			uint8_t* pbTrampoline = _mem->trampoline;
 
-			unsigned char const opcodes[] = {
-				// mov rax, <mem> ; hidden argument passed in rax (non standard calling convention)
-				0x48, 0xB8, t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7],
+			bool end_code = false;
 
-				// jmp <proxy>
-				0xE9, f[0], f[1], f[2], f[3],
-			};
+			while (pbSrc - static_cast<const uint8_t*>(proxy_func) < sizeof(_mem->trampoline))
+			{
+				const uint8_t* pbOp = pbSrc;
+				long lExtra = 0;
 
-			memcpy(_mem->trampoline, opcodes, sizeof(opcodes));
+				pbSrc = (const uint8_t*)_sl::_DetourCopyInstructionX64(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
+
+				pbTrampoline += (pbSrc - pbOp); // + lExtra; // FIXME
+
+				if (_sl::_detour_does_code_end_function(pbOp))
+				{
+					end_code = true;
+					break;
+				}
+			}
+
+			if (!end_code)
+				throw 1; // func/func_detour is too large?
 		}
 
 		_mem->alloc_size = alloc_size;

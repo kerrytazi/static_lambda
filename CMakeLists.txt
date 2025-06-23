@@ -33,10 +33,6 @@ add_library(static_lambda ${PROJECT_SOURCES})
 target_include_directories(static_lambda PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/static_lambda)
 target_include_directories(static_lambda INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if(MSVC)
-	target_compile_options(static_lambda PRIVATE "/JMC-")
-endif()
-
 # cmake -DSTATIC_LAMBDA_TEST=ON -B build
 option(STATIC_LAMBDA_TEST "Build static-lambda test project" OFF)
 
@@ -45,13 +41,4 @@ if(STATIC_LAMBDA_TEST)
 	target_link_libraries(static_lambda_test static_lambda)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT static_lambda_test)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-	#if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-	#	target_compile_options(static_lambda_test PUBLIC
-	#		$<$<CONFIG:Debug>:-O0 -g>
-	#		$<$<CONFIG:MinSizeRel>:-Os -s>
-	#		$<$<CONFIG:Release>:-O2 -s>
-	#		$<$<CONFIG:RelWithDebInfo>:-O2 -g>
-	#	)
-	#endif()
 endif()

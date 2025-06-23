@@ -2,25 +2,34 @@
 
 #include "sysapi.hpp"
 
+#include <cstdint>
 #include <type_traits>
 #include <utility>
 #include <cstring>
 
+#if defined(_MSC_VER)
+#define _SL_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#define _SL_NO_INLINE __attribute__((noinline))
+#else
+#define _SL_NO_INLINE
+#pragma warning("_SL_NO_INLINE not supported for this compiler")
+#endif
 
 namespace _sl
 {
 
-void* _DetourCopyInstructionX64(void* pDst, void** ppDstPool, void* pSrc, void** ppTarget, long* plExtra);
+void* _DetourCopyInstructionX64(void* pDst, void** ppDstPool, const void* pSrc, void** ppTarget, long* plExtra);
 bool _detour_does_code_end_function(const unsigned char*  pbCode);
 
 struct CAligned
 {
-	void* mem;
+	const void* mem;
 	size_t size;
 };
 
 inline
-CAligned align_mem_down_to(void* mem, size_t size, size_t align)
+CAligned align_mem_down_to(const void* mem, size_t size, size_t align)
 {
 	size_t mask = align - 1;
 	size_t memu = reinterpret_cast<size_t>(mem);
@@ -35,9 +44,9 @@ CAligned align_mem_down_to(void* mem, size_t size, size_t align)
 }
 
 inline
-void* unjump(void* ptr)
+const void* unjump(const void* ptr)
 {
-	uint8_t* t = static_cast<uint8_t*>(ptr);
+	const uint8_t* t = static_cast<const uint8_t*>(ptr);
 
 	while (*t == 0xE9)
 	{
@@ -46,12 +55,12 @@ void* unjump(void* ptr)
 		t = t + 5 + offset;
 	}
 
-	return static_cast<void*>(t);
+	return static_cast<const void*>(t);
 }
 
 struct alignas(16) smem_base
 {
-	uint8_t trampoline[64];
+	uint8_t trampoline[256];
 	uint8_t original[64];
 	uint8_t save_target_code[64];
 	void* save_target;
@@ -87,13 +96,31 @@ struct helper<TRet(TArgs...)>
 	{
 		static TRet func(TArgs... args)
 		{
-			smem<FL> *mem = reinterpret_cast<smem<FL> *>(_sl::_get_rax());
-			return mem->func(args...);
+			// _get_rip must be called inside this function
+			auto mem = reinterpret_cast<smem<FL> *>(_sl::_get_rip() & (~size_t(0x0FFF)));
+			// noinline, otherwise compiler may inline lambda call.
+			// but we need to keep this function small for faster copy
+			return call(args..., mem);
 		}
 
 		static TRet func_detour(TArgs... args)
 		{
-			smem<FL> *mem = reinterpret_cast<smem<FL>*>(_sl::_get_rax());
+			// _get_rip must be called inside this function
+			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & (~size_t(0x0FFF)));
+			// noinline, otherwise compiler may inline lambda call.
+			// but we need to keep this function small for faster copy
+			return call_detour(mem, args...);
+		}
+
+		_SL_NO_INLINE
+		static TRet call(TArgs... args, smem<FL>* mem)
+		{
+			return mem->func(args...);
+		}
+
+		_SL_NO_INLINE
+		static TRet call_detour(smem<FL>* mem, TArgs... args)
+		{
 			function_pointer_type original = reinterpret_cast<function_pointer_type>(static_cast<void*>(mem->original));
 			return mem->func(original, args...);
 		}
