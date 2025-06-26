@@ -7,135 +7,13 @@
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //
 
-extern "C" void* memcpy(void* dst, const void* src, unsigned long size);
-
-#define CHAR_BIT      8
-#define SCHAR_MIN   (-128)
-#define SCHAR_MAX     127
-#define UCHAR_MAX     0xff
-
-#define MB_LEN_MAX    5
-#define SHRT_MIN    (-32768)
-#define SHRT_MAX      32767
-#define USHRT_MAX     0xffff
-#define INT_MIN     (-2147483647 - 1)
-#define INT_MAX       2147483647
-#define UINT_MAX      0xffffffff
-#define LONG_MIN    (-2147483647L - 1)
-#define LONG_MAX      2147483647L
-#define ULONG_MAX     0xffffffffUL
-#define LLONG_MAX     9223372036854775807i64
-#define LLONG_MIN   (-9223372036854775807i64 - 1)
-#define ULLONG_MAX    0xffffffffffffffffui64
-
-#define _I8_MIN     (-127i8 - 1)
-#define _I8_MAX       127i8
-#define _UI8_MAX      0xffui8
-
-#define _I16_MIN    (-32767i16 - 1)
-#define _I16_MAX      32767i16
-#define _UI16_MAX     0xffffui16
-
-#define _I32_MIN    (-2147483647i32 - 1)
-#define _I32_MAX      2147483647i32
-#define _UI32_MAX     0xffffffffui32
-
-#define ARRAYSIZE(x)    (sizeof(x)/sizeof(x[0]))
-#define C_ASSERT(x)
+#include <windows.h>
 #define ASSERT(x)
-
-#define TRUE 1
-#define FALSE 0
-
-#ifndef NULL
-#define NULL 0
-#endif
-
-#ifndef _Out_opt_
-#define _Out_opt_
-#endif
-
-#ifndef _In_opt_
-#define _In_opt_
-#endif
-
-#ifndef _Inout_opt_
-#define _Inout_opt_
-#endif
-
-#ifndef _In_
-#define _In_
-#endif
-
-#define far
-#define near
-#define CONST const
-#define UNALIGNED
-
-typedef char                CHAR;
-typedef signed char         INT8;
-typedef unsigned char       UCHAR;
-typedef unsigned char       UINT8;
-typedef unsigned char       BYTE;
-typedef short               SHORT;
-typedef signed short        INT16;
-typedef unsigned short      USHORT;
-typedef unsigned short      UINT16;
-typedef unsigned short      WORD;
-typedef int                 INT;
-typedef signed int          INT32;
-typedef unsigned int        UINT;
-typedef unsigned int        UINT32;
-typedef long                LONG;
-typedef unsigned long       ULONG;
-typedef unsigned long       DWORD;
-typedef long long             LONGLONG;
-typedef long long             LONG64;
-typedef signed long long      INT64;
-typedef unsigned long long    ULONGLONG;
-typedef unsigned long long    DWORDLONG;
-typedef unsigned long long    ULONG64;
-typedef unsigned long long    DWORD64;
-typedef unsigned long long    UINT64;
-
-typedef unsigned long       DWORD;
-typedef int                 BOOL;
-typedef unsigned char       BYTE;
-typedef unsigned short      WORD;
-typedef float               FLOAT;
-typedef FLOAT               *PFLOAT;
-typedef BOOL near           *PBOOL;
-typedef BOOL far            *LPBOOL;
-typedef BYTE near           *PBYTE;
-typedef BYTE far            *LPBYTE;
-typedef int near            *PINT;
-typedef int far             *LPINT;
-typedef WORD near           *PWORD;
-typedef WORD far            *LPWORD;
-typedef long far            *LPLONG;
-typedef DWORD near          *PDWORD;
-typedef DWORD far           *LPDWORD;
-typedef void far            *LPVOID;
-typedef CONST void far      *LPCVOID;
-
-typedef int                 INT;
-typedef unsigned int        UINT;
-typedef unsigned int        *PUINT;
-
-typedef long long             INT_PTR;
-typedef unsigned long long    UINT_PTR;
-typedef long long             LONG_PTR;
-typedef unsigned long long    ULONG_PTR;
-
-typedef void *PVOID;
-typedef void *PVOID64;
 
 #define DETOURS_X64
 
-
 #define DETOUR_INSTRUCTION_TARGET_NONE          ((PVOID)0)
 #define DETOUR_INSTRUCTION_TARGET_DYNAMIC       ((PVOID)(LONG_PTR)-1)
-#define DETOUR_SECTION_HEADER_SIGNATURE         0x00727444   // "Dtr\0"
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -354,6 +232,7 @@ class CDetourDis
 	BYTE                m_rbScratchDst[64]; // matches or exceeds rbCode
 };
 
+inline
 PVOID DetourCopyInstruction(_In_opt_ PVOID pDst,
 								   _Inout_opt_ PVOID *ppDstPool,
 								   _In_ PVOID pSrc,
@@ -368,6 +247,7 @@ PVOID DetourCopyInstruction(_In_opt_ PVOID pDst,
 
 /////////////////////////////////////////////////////////// Disassembler Code.
 //
+inline
 CDetourDis::CDetourDis(_Out_opt_ PBYTE *ppbTarget, _Out_opt_ LONG *plExtra) :
 	m_bOperandOverride(FALSE),
 	m_bAddressOverride(FALSE),
@@ -384,6 +264,7 @@ CDetourDis::CDetourDis(_Out_opt_ PBYTE *ppbTarget, _Out_opt_ LONG *plExtra) :
 	*m_plExtra = 0;
 }
 
+inline
 PBYTE CDetourDis::CopyInstruction(PBYTE pbDst, PBYTE pbSrc)
 {
 	// Configure scratch areas if real areas are not available.
@@ -403,6 +284,7 @@ PBYTE CDetourDis::CopyInstruction(PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	UINT nBytesFixed;
@@ -484,6 +366,7 @@ PBYTE CDetourDis::CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return pbSrc + nBytes;
 }
 
+inline
 PBYTE CDetourDis::CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	pbDst[0] = pbSrc[0];
@@ -491,12 +374,14 @@ PBYTE CDetourDis::CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
+inline
 PBYTE CDetourDis::CopyBytesSegment(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	m_nSegmentOverride = pbSrc[0];
 	return CopyBytesPrefix(0, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyBytesRax(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 { // AMD64 only
 	if (pbSrc[0] & 0x8) {
@@ -505,6 +390,7 @@ PBYTE CDetourDis::CopyBytesRax(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyBytesPrefix(0, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pEntry;
@@ -538,6 +424,7 @@ PBYTE CDetourDis::CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return pbSrc + 2;
 }
 
+inline
 PBYTE CDetourDis::AdjustTarget(PBYTE pbDst, PBYTE pbSrc, UINT cbOp,
 							   UINT cbTargetOffset, UINT cbTargetSize)
 {
@@ -618,6 +505,7 @@ PBYTE CDetourDis::AdjustTarget(PBYTE pbDst, PBYTE pbSrc, UINT cbOp,
 	return pbTarget;
 }
 
+inline
 PBYTE CDetourDis::Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pbDst;
@@ -628,6 +516,7 @@ PBYTE CDetourDis::Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 
 ////////////////////////////////////////////////////// Individual Bytes Codes.
 //
+inline
 PBYTE CDetourDis::Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	pbDst[0] = pbSrc[0];
@@ -635,6 +524,7 @@ PBYTE CDetourDis::Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
+inline
 PBYTE CDetourDis::Copy0F78(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	// vmread, 66/extrq, F2/insertq
@@ -653,6 +543,7 @@ PBYTE CDetourDis::Copy0F78(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::Copy0F00(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	// jmpe is 32bit x86 only
@@ -665,6 +556,7 @@ PBYTE CDetourDis::Copy0F00(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::Copy0FB8(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	// jmpe is 32bit x86 only
@@ -675,30 +567,35 @@ PBYTE CDetourDis::Copy0FB8(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::Copy66(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // Operand-size override prefix
 	m_bOperandOverride = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::Copy67(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // Address size override prefix
 	m_bAddressOverride = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyF2(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	m_bF2 = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyF3(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 { // x86 only
 	m_bF3 = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pEntry;
@@ -719,6 +616,7 @@ PBYTE CDetourDis::CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pEntry;
@@ -739,6 +637,7 @@ PBYTE CDetourDis::CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
+inline
 PBYTE CDetourDis::CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // INC /0
 	// DEC /1
@@ -790,6 +689,7 @@ PBYTE CDetourDis::CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return pbOut;
 }
 
+inline
 PBYTE CDetourDis::CopyVexEvexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc, BYTE p, BYTE fp16)
 // m is first instead of last in the hopes of pbDst/pbSrc being
 // passed along efficiently in the registers they were already in.
@@ -819,6 +719,7 @@ PBYTE CDetourDis::CopyVexEvexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc, BYTE p, BY
 	}
 }
 
+inline
 PBYTE CDetourDis::CopyVexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc)
 // m is first instead of last in the hopes of pbDst/pbSrc being
 // passed along efficiently in the registers they were already in.
@@ -829,6 +730,7 @@ PBYTE CDetourDis::CopyVexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc)
 }
 
 
+inline
 PBYTE CDetourDis::CopyVex3(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 // 3 byte VEX prefix 0xC4
 {
@@ -874,6 +776,7 @@ PBYTE CDetourDis::CopyVex3(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyVexCommon(pbSrc[1] & 0x1F, pbDst + 3, pbSrc + 3);
 }
 
+inline
 PBYTE CDetourDis::CopyVex2(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 // 2 byte VEX prefix 0xC5
 {
@@ -889,6 +792,7 @@ PBYTE CDetourDis::CopyVex2(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyVexCommon(1, pbDst + 2, pbSrc + 2);
 }
 
+inline
 PBYTE CDetourDis::CopyEvex(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 // 62, 3 byte payload, x86 with implied prefixes like Vex
 // for 32bit, mode 0xC0 else fallback to bound /r
@@ -929,6 +833,7 @@ PBYTE CDetourDis::CopyEvex(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyVexEvexCommon(p0 & 3u, pbDst + 4, pbSrc + 4, p1 & 3u, p0 & 4u);
 }
 
+inline
 PBYTE CDetourDis::CopyXop(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 /* 3 byte AMD XOP prefix 0x8F
 byte0: 0x8F
@@ -965,10 +870,14 @@ pp is like VEX but only instructions with 0 are defined
 
 //////////////////////////////////////////////////////////////////////////////
 //
+inline
 PBYTE CDetourDis::s_pbModuleBeg = NULL;
+inline
 PBYTE CDetourDis::s_pbModuleEnd = (PBYTE)~(ULONG_PTR)0;
+inline
 BOOL CDetourDis::s_fLimitReferencesToModule = FALSE;
 
+inline
 BOOL CDetourDis::SetCodeModule(PBYTE pbBeg, PBYTE pbEnd, BOOL fLimitReferencesToModule)
 {
 	if (pbEnd < pbBeg) {
@@ -984,6 +893,7 @@ BOOL CDetourDis::SetCodeModule(PBYTE pbBeg, PBYTE pbEnd, BOOL fLimitReferencesTo
 
 ///////////////////////////////////////////////////////// Disassembler Tables.
 //
+inline
 const BYTE CDetourDis::s_rbModRm[256] = {
 	0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 0x
 	0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 1x
@@ -1003,6 +913,7 @@ const BYTE CDetourDis::s_rbModRm[256] = {
 	0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0                  // Fx
 };
 
+inline
 const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable[] =
 {
 	/* 00 */ ENTRY_CopyBytes2Mod,                      // ADD /r
@@ -1350,6 +1261,7 @@ const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable[] =
 	/* FF */ ENTRY_CopyFF,                             // CALL/2
 };
 
+inline
 const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable0F[] =
 {
 #ifdef DETOURS_X86
@@ -1644,6 +1556,7 @@ const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable0F[] =
 	/* FF */ ENTRY_Invalid,                            // _FF
 };
 
+inline
 BOOL CDetourDis::SanityCheckSystem()
 {
 	C_ASSERT(ARRAYSIZE(CDetourDis::s_rceCopyTable) == 256);
@@ -1651,6 +1564,7 @@ BOOL CDetourDis::SanityCheckSystem()
 	return TRUE;
 }
 
+inline
 bool detour_does_code_end_function(const unsigned char* pbCode)
 {
 	if (pbCode[0] == 0xeb ||    // jmp +imm8
@@ -1683,11 +1597,13 @@ bool detour_does_code_end_function(const unsigned char* pbCode)
 namespace _sl
 {
 
+inline
 void* _DetourCopyInstructionX64(void* pDst, void** ppDstPool, const void* pSrc, void** ppTarget, long* plExtra)
 {
 	return DetourCopyInstruction(pDst, ppDstPool, (void*)pSrc, ppTarget, plExtra);
 }
 
+inline
 bool _detour_does_code_end_function(const unsigned char* pbCode)
 {
 	return detour_does_code_end_function(pbCode);

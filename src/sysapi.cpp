@@ -1,5 +1,5 @@
-#include "sysapi.hpp"
-#include "common.hpp"
+#include "../include/static_lambda/sysapi.hpp"
+#include "../include/static_lambda/common.hpp"
 
 #include <cstdint>
 
@@ -9,6 +9,7 @@ __declspec(allocate(".text"))
 #else
 __attribute__((section(".text")))
 #endif
+inline
 const uint8_t _sl_get_rip_code[]
 {
 	// pop rax
@@ -17,14 +18,16 @@ const uint8_t _sl_get_rip_code[]
 	0xff, 0xe0,
 };
 
+inline
 constinit size_t(*const _sl::_get_rip)() = (size_t(*)())&_sl_get_rip_code;
 
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include <Windows.h>
+#include <windows.h>
 
+inline
 void *_sl::_alloc(const void *target, size_t size)
 {
 	// 2Gib down
@@ -56,12 +59,14 @@ void *_sl::_alloc(const void *target, size_t size)
 	return nullptr;
 }
 
+inline
 void _sl::_free(void *ptr, size_t size)
 {
 	(void)size;
 	VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
+inline
 void _sl::_protect(void *ptr, size_t size)
 {
 	DWORD old_protection = 0;
@@ -72,6 +77,7 @@ void _sl::_protect(void *ptr, size_t size)
 
 #include <sys/mman.h>
 
+inline
 void *_sl::_alloc(const void *_target, size_t size)
 {
 	auto [target, _] = align_mem_down_to(_target, size, 4096);
@@ -99,11 +105,13 @@ void *_sl::_alloc(const void *_target, size_t size)
 	return nullptr;
 }
 
+inline
 void _sl::_free(void *ptr, size_t size)
 {
 	munmap(ptr, size);
 }
 
+inline
 void _sl::_protect(void *ptr, size_t size)
 {
 	mprotect(ptr, size, PROT_EXEC | PROT_READ | PROT_WRITE);
