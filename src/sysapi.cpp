@@ -1,6 +1,24 @@
 #include "sysapi.hpp"
 #include "common.hpp"
 
+#include <cstdint>
+
+#if defined _MSC_VER
+#pragma section(".text")
+__declspec(allocate(".text"))
+#else
+__attribute__((section(".text")))
+#endif
+const uint8_t _sl_get_rip_code[]
+{
+	// pop rax
+	0x58,
+	// jmp rax
+	0xff, 0xe0,
+};
+
+constinit size_t(*const _sl::_get_rip)() = (size_t(*)())&_sl_get_rip_code;
+
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
@@ -53,22 +71,6 @@ void _sl::_protect(void *ptr, size_t size)
 #else
 
 #include <sys/mman.h>
-
-__attribute__((noinline))
-__attribute__((optimize("O2")))
-size_t _sl::_get_rip()
-{
-	asm volatile
-	(
-		"popq %%rax\n"
-		"jmpq *%%rax\n"
-		:
-		:
-		: "rax"
-	);
-
-	__builtin_unreachable();
-}
 
 void *_sl::_alloc(const void *_target, size_t size)
 {

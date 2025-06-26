@@ -16,18 +16,6 @@ set(PROJECT_SOURCES
 	include/static_lambda/detour_lambda.hpp
 )
 
-if(WIN32)
-	enable_language(ASM_MASM)
-	list(APPEND PROJECT_SOURCES
-		src/slwinapi.asm
-	)
-
-	if(NOT MSVC)
-		message(FATAL_ERROR "Only msvc is supported on Windows")
-	endif()
-endif()
-
-
 add_library(static_lambda ${PROJECT_SOURCES})
 
 target_include_directories(static_lambda PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/static_lambda)
@@ -42,3 +30,4 @@ if(STATIC_LAMBDA_TEST)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT static_lambda_test)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
+
