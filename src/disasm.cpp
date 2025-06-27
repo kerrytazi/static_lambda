@@ -10,6 +10,12 @@
 #include <windows.h>
 #define ASSERT(x)
 
+#if defined(_SL_SINGLEHEADER_)
+#define _SL_INLINE_ inline
+#else
+#define _SL_INLINE_
+#endif
+
 #define DETOURS_X64
 
 #define DETOUR_INSTRUCTION_TARGET_NONE          ((PVOID)0)
@@ -232,7 +238,7 @@ class CDetourDis
 	BYTE                m_rbScratchDst[64]; // matches or exceeds rbCode
 };
 
-inline
+_SL_INLINE_
 PVOID DetourCopyInstruction(_In_opt_ PVOID pDst,
 								   _Inout_opt_ PVOID *ppDstPool,
 								   _In_ PVOID pSrc,
@@ -247,7 +253,7 @@ PVOID DetourCopyInstruction(_In_opt_ PVOID pDst,
 
 /////////////////////////////////////////////////////////// Disassembler Code.
 //
-inline
+_SL_INLINE_
 CDetourDis::CDetourDis(_Out_opt_ PBYTE *ppbTarget, _Out_opt_ LONG *plExtra) :
 	m_bOperandOverride(FALSE),
 	m_bAddressOverride(FALSE),
@@ -264,7 +270,7 @@ CDetourDis::CDetourDis(_Out_opt_ PBYTE *ppbTarget, _Out_opt_ LONG *plExtra) :
 	*m_plExtra = 0;
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyInstruction(PBYTE pbDst, PBYTE pbSrc)
 {
 	// Configure scratch areas if real areas are not available.
@@ -284,7 +290,7 @@ PBYTE CDetourDis::CopyInstruction(PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	UINT nBytesFixed;
@@ -366,7 +372,7 @@ PBYTE CDetourDis::CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return pbSrc + nBytes;
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	pbDst[0] = pbSrc[0];
@@ -374,14 +380,14 @@ PBYTE CDetourDis::CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyBytesSegment(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	m_nSegmentOverride = pbSrc[0];
 	return CopyBytesPrefix(0, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyBytesRax(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 { // AMD64 only
 	if (pbSrc[0] & 0x8) {
@@ -390,7 +396,7 @@ PBYTE CDetourDis::CopyBytesRax(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyBytesPrefix(0, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pEntry;
@@ -424,7 +430,7 @@ PBYTE CDetourDis::CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return pbSrc + 2;
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::AdjustTarget(PBYTE pbDst, PBYTE pbSrc, UINT cbOp,
 							   UINT cbTargetOffset, UINT cbTargetSize)
 {
@@ -505,7 +511,7 @@ PBYTE CDetourDis::AdjustTarget(PBYTE pbDst, PBYTE pbSrc, UINT cbOp,
 	return pbTarget;
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pbDst;
@@ -516,7 +522,7 @@ PBYTE CDetourDis::Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 
 ////////////////////////////////////////////////////// Individual Bytes Codes.
 //
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	pbDst[0] = pbSrc[0];
@@ -524,7 +530,7 @@ PBYTE CDetourDis::Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Copy0F78(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	// vmread, 66/extrq, F2/insertq
@@ -543,7 +549,7 @@ PBYTE CDetourDis::Copy0F78(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Copy0F00(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	// jmpe is 32bit x86 only
@@ -556,7 +562,7 @@ PBYTE CDetourDis::Copy0F00(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Copy0FB8(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 {
 	// jmpe is 32bit x86 only
@@ -567,35 +573,35 @@ PBYTE CDetourDis::Copy0FB8(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Copy66(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // Operand-size override prefix
 	m_bOperandOverride = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::Copy67(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // Address size override prefix
 	m_bAddressOverride = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyF2(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	m_bF2 = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyF3(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 { // x86 only
 	m_bF3 = TRUE;
 	return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pEntry;
@@ -616,7 +622,7 @@ PBYTE CDetourDis::CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
 	(void)pEntry;
@@ -637,7 +643,7 @@ PBYTE CDetourDis::CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // INC /0
 	// DEC /1
@@ -689,7 +695,7 @@ PBYTE CDetourDis::CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 	return pbOut;
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyVexEvexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc, BYTE p, BYTE fp16)
 // m is first instead of last in the hopes of pbDst/pbSrc being
 // passed along efficiently in the registers they were already in.
@@ -719,7 +725,7 @@ PBYTE CDetourDis::CopyVexEvexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc, BYTE p, BY
 	}
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyVexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc)
 // m is first instead of last in the hopes of pbDst/pbSrc being
 // passed along efficiently in the registers they were already in.
@@ -730,7 +736,7 @@ PBYTE CDetourDis::CopyVexCommon(BYTE m, PBYTE pbDst, PBYTE pbSrc)
 }
 
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyVex3(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 // 3 byte VEX prefix 0xC4
 {
@@ -776,7 +782,7 @@ PBYTE CDetourDis::CopyVex3(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyVexCommon(pbSrc[1] & 0x1F, pbDst + 3, pbSrc + 3);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyVex2(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 // 2 byte VEX prefix 0xC5
 {
@@ -792,7 +798,7 @@ PBYTE CDetourDis::CopyVex2(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyVexCommon(1, pbDst + 2, pbSrc + 2);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyEvex(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 // 62, 3 byte payload, x86 with implied prefixes like Vex
 // for 32bit, mode 0xC0 else fallback to bound /r
@@ -833,7 +839,7 @@ PBYTE CDetourDis::CopyEvex(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 	return CopyVexEvexCommon(p0 & 3u, pbDst + 4, pbSrc + 4, p1 & 3u, p0 & 4u);
 }
 
-inline
+_SL_INLINE_
 PBYTE CDetourDis::CopyXop(REFCOPYENTRY, PBYTE pbDst, PBYTE pbSrc)
 /* 3 byte AMD XOP prefix 0x8F
 byte0: 0x8F
@@ -870,14 +876,14 @@ pp is like VEX but only instructions with 0 are defined
 
 //////////////////////////////////////////////////////////////////////////////
 //
-inline
+_SL_INLINE_
 PBYTE CDetourDis::s_pbModuleBeg = NULL;
-inline
+_SL_INLINE_
 PBYTE CDetourDis::s_pbModuleEnd = (PBYTE)~(ULONG_PTR)0;
-inline
+_SL_INLINE_
 BOOL CDetourDis::s_fLimitReferencesToModule = FALSE;
 
-inline
+_SL_INLINE_
 BOOL CDetourDis::SetCodeModule(PBYTE pbBeg, PBYTE pbEnd, BOOL fLimitReferencesToModule)
 {
 	if (pbEnd < pbBeg) {
@@ -893,7 +899,7 @@ BOOL CDetourDis::SetCodeModule(PBYTE pbBeg, PBYTE pbEnd, BOOL fLimitReferencesTo
 
 ///////////////////////////////////////////////////////// Disassembler Tables.
 //
-inline
+_SL_INLINE_
 const BYTE CDetourDis::s_rbModRm[256] = {
 	0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 0x
 	0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 1x
@@ -913,7 +919,7 @@ const BYTE CDetourDis::s_rbModRm[256] = {
 	0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0                  // Fx
 };
 
-inline
+_SL_INLINE_
 const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable[] =
 {
 	/* 00 */ ENTRY_CopyBytes2Mod,                      // ADD /r
@@ -1261,7 +1267,7 @@ const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable[] =
 	/* FF */ ENTRY_CopyFF,                             // CALL/2
 };
 
-inline
+_SL_INLINE_
 const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable0F[] =
 {
 #ifdef DETOURS_X86
@@ -1556,7 +1562,7 @@ const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable0F[] =
 	/* FF */ ENTRY_Invalid,                            // _FF
 };
 
-inline
+_SL_INLINE_
 BOOL CDetourDis::SanityCheckSystem()
 {
 	C_ASSERT(ARRAYSIZE(CDetourDis::s_rceCopyTable) == 256);
@@ -1564,7 +1570,7 @@ BOOL CDetourDis::SanityCheckSystem()
 	return TRUE;
 }
 
-inline
+_SL_INLINE_
 bool detour_does_code_end_function(const unsigned char* pbCode)
 {
 	if (pbCode[0] == 0xeb ||    // jmp +imm8
@@ -1597,13 +1603,13 @@ bool detour_does_code_end_function(const unsigned char* pbCode)
 namespace _sl
 {
 
-inline
+_SL_INLINE_
 void* _DetourCopyInstructionX64(void* pDst, void** ppDstPool, const void* pSrc, void** ppTarget, long* plExtra)
 {
 	return DetourCopyInstruction(pDst, ppDstPool, (void*)pSrc, ppTarget, plExtra);
 }
 
-inline
+_SL_INLINE_
 bool _detour_does_code_end_function(const unsigned char* pbCode)
 {
 	return detour_does_code_end_function(pbCode);

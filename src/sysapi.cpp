@@ -3,13 +3,19 @@
 
 #include <cstdint>
 
+#if defined(_SL_SINGLEHEADER_)
+#define _SL_INLINE_ inline
+#else
+#define _SL_INLINE_
+#endif
+
 #if defined _MSC_VER
 #pragma section(".text")
 __declspec(allocate(".text"))
 #else
 __attribute__((section(".text")))
 #endif
-inline
+_SL_INLINE_
 const uint8_t _sl_get_rip_code[]
 {
 	// pop rax
@@ -18,7 +24,7 @@ const uint8_t _sl_get_rip_code[]
 	0xff, 0xe0,
 };
 
-inline
+_SL_INLINE_
 constinit size_t(*const _sl::_get_rip)() = (size_t(*)())&_sl_get_rip_code;
 
 #ifdef _WIN32
@@ -27,7 +33,7 @@ constinit size_t(*const _sl::_get_rip)() = (size_t(*)())&_sl_get_rip_code;
 #define NOMINMAX
 #include <windows.h>
 
-inline
+_SL_INLINE_
 void *_sl::_alloc(const void *target, size_t size)
 {
 	// 2Gib down
@@ -59,14 +65,14 @@ void *_sl::_alloc(const void *target, size_t size)
 	return nullptr;
 }
 
-inline
+_SL_INLINE_
 void _sl::_free(void *ptr, size_t size)
 {
 	(void)size;
 	VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
-inline
+_SL_INLINE_
 void _sl::_protect(void *ptr, size_t size)
 {
 	DWORD old_protection = 0;
@@ -77,7 +83,7 @@ void _sl::_protect(void *ptr, size_t size)
 
 #include <sys/mman.h>
 
-inline
+_SL_INLINE_
 void *_sl::_alloc(const void *_target, size_t size)
 {
 	auto [target, _] = align_mem_down_to(_target, size, 4096);
@@ -105,13 +111,13 @@ void *_sl::_alloc(const void *_target, size_t size)
 	return nullptr;
 }
 
-inline
+_SL_INLINE_
 void _sl::_free(void *ptr, size_t size)
 {
 	munmap(ptr, size);
 }
 
-inline
+_SL_INLINE_
 void _sl::_protect(void *ptr, size_t size)
 {
 	mprotect(ptr, size, PROT_EXEC | PROT_READ | PROT_WRITE);
