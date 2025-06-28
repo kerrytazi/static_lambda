@@ -4,7 +4,6 @@ Helps convert C++ lambdas with captures to function pointers.
 - [static_lambda](#static_lambda)
 - [detour_lambda](#detour_lambda)
 - [How to import](#how-to-import)
-  - [Single header](#single-header)
   - [cmake](#cmake)
 - [Build test project](#build-test-project)
   - [cmake](#cmake-1)
@@ -15,7 +14,7 @@ Helps convert C++ lambdas with captures to function pointers.
 Lightweight way to convert lambdas to function pointers.
 
 Current limitations:
-- windows/linux x86_64 only
+- no arm support
 - no copy-constructor
 
 ```cpp
@@ -37,8 +36,8 @@ int result = ptr(3, 5); // 3 + 5 + 10 = 18
 Lightweight way to detour functions with lambdas.
 
 Current limitations:
-- UNSAFE AS F***
-- windows/linux x86_64 only
+- no thread safety
+- no arm support
 - no copy-constructor
 
 
@@ -76,12 +75,6 @@ git clone
 git clone https://github.com/kerrytazi/static_lambda.git lib/ccall
 ```
 
-## Single header
-
-```cpp
-#include "lib/static_lambda/singleheader.hpp"
-```
-
 ## cmake
 
 ```
@@ -90,7 +83,9 @@ target_link_libraries(myproject static_lambda)
 ```
 
 # Build test project
+
 ## cmake
+
 ```
 cmake -DSTATIC_LAMBDA_TEST=ON -B out
 cmake --build out
@@ -103,6 +98,6 @@ Add `cmake` component via `Visual Studio Installer`.
 'Open a local folder' in root.
 
 # Currently supported platforms
-- Windows x86_64
-- Linux x86_64 (amd64)
 
+- Windows x86, x64
+- Linux x86, x64

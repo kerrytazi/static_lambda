@@ -19,9 +19,6 @@
 namespace _sl
 {
 
-void* _DetourCopyInstructionX64(void* pDst, void** ppDstPool, const void* pSrc, void** ppTarget, long* plExtra);
-bool _detour_does_code_end_function(const unsigned char*  pbCode);
-
 struct CAligned
 {
 	const void* mem;

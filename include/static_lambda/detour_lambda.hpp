@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.hpp"
+#include "../../src/common.hpp"
 #include "static_lambda.hpp"
 
 namespace sl
@@ -51,7 +51,7 @@ struct detour
 					const uint8_t* pbOp = pbSrc;
 					long lExtra = 0;
 
-					pbSrc = (const uint8_t*)_sl::_DetourCopyInstructionX64(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
+					pbSrc = (const uint8_t*)_sl::_DetourCopyInstruction(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
 
 					pbTrampoline += (pbSrc - pbOp); // + lExtra; // FIXME
 

@@ -1,16 +1,23 @@
 ﻿{
     "version": 3,
     "configurePresets": [
+
         {
-            "name": "windows-base",
+            "name": "base",
             "hidden": true,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
+            "cacheVariables": {
+                "STATIC_LAMBDA_TEST": "ON"
+            }
+        },
+
+        //// Windows
+        {
+            "name": "windows-base",
+            "hidden": true,
+            "inherits": "base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe"
@@ -21,39 +28,87 @@
                 "rhs": "Windows"
             }
         },
+
+        // Windows x64
         {
-            "name": "windows-debug",
-            "displayName": "Windows Debug",
+            "name": "x64-windows",
+            "hidden": true,
             "inherits": "windows-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "STATIC_LAMBDA_TEST": "ON"
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
             }
         },
         {
-            "name": "windows-release",
-            "displayName": "Windows Release",
-            "inherits": "windows-debug",
+            "name": "x64-windows-debug",
+            "displayName": "x64 Windows Debug",
+            "inherits": "x64-windows",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "STATIC_LAMBDA_TEST": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "windows-release-debuginfo",
-            "displayName": "Windows Release With Debug Info",
-            "inherits": "windows-debug",
+            "name": "x64-windows-release",
+            "displayName": "x64 Windows Release",
+            "inherits": "x64-windows",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "STATIC_LAMBDA_TEST": "ON"
+                "CMAKE_BUILD_TYPE": "Release"
             }
         },
+        {
+            "name": "x64-windows-release-debuginfo",
+            "displayName": "x64 Windows Release With Debug Info",
+            "inherits": "x64-windows",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+
+        // Windows x86
+        {
+            "name": "x86-windows",
+            "hidden": true,
+            "inherits": "windows-base",
+            "architecture": {
+                "value": "x86",
+                "strategy": "external"
+            }
+        },
+        {
+            "name": "x86-windows-debug",
+            "displayName": "x86 Windows Debug",
+            "inherits": "x86-windows",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x86-windows-release",
+            "displayName": "x86 Windows Release",
+            "inherits": "x86-windows",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "x86-windows-release-debuginfo",
+            "displayName": "x86 Windows Release With Debug Info",
+            "inherits": "x86-windows",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+
+
+        //// Linux
         {
             "name": "linux-base",
             "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            },
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -65,31 +120,74 @@
                 }
             }
         },
+
+        // Linux x64
         {
-            "name": "linux-debug",
-            "displayName": "Linux Debug",
+            "name": "x64-linux",
+            "hidden": true,
             "inherits": "linux-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "STATIC_LAMBDA_TEST": "ON"
+            "environment": {
+                "CFLAGS": "-m64",
+                "CXXFLAGS": "-m64"
             }
         },
         {
-            "name": "linux-release",
-            "displayName": "Linux Release",
-            "inherits": "linux-base",
+            "name": "x64-linux-debug",
+            "displayName": "x64 Linux Debug",
+            "inherits": "x64-linux",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "STATIC_LAMBDA_TEST": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "linux-release-debuginfo",
-            "displayName": "Linux Release With Debug Info",
-            "inherits": "linux-base",
+            "name": "x64-linux-release",
+            "displayName": "x64 Linux Release",
+            "inherits": "x64-linux",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "STATIC_LAMBDA_TEST": "ON"
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "x64-linux-release-debuginfo",
+            "displayName": "x64 Linux Release With Debug Info",
+            "inherits": "x64-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+
+        // Linux x86
+        {
+            "name": "x86-linux",
+            "hidden": true,
+            "inherits": "linux-base",
+            "environment": {
+                "CFLAGS": "-m32",
+                "CXXFLAGS": "-m32"
+            }
+        },
+        {
+            "name": "x86-linux-debug",
+            "displayName": "x86 Linux Debug",
+            "inherits": "x86-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x86-linux-release",
+            "displayName": "x86 Linux Release",
+            "inherits": "x86-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "x86-linux-release-debuginfo",
+            "displayName": "x86 Linux Release With Debug Info",
+            "inherits": "x86-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         }
     ]

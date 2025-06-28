@@ -1,7 +1,8 @@
 #pragma once
 
-#include "common.hpp"
-#include "sysapi.hpp"
+#include "../../src/common.hpp"
+#include "../../src/sysapi.hpp"
+#include "../../src/disasm_wrapper.hpp"
 
 #include <new>
 #include <utility>
@@ -41,6 +42,9 @@ struct lambda
 
 		_mem = static_cast<_sl::smem_base*>(_sl::_alloc(target, alloc_size));
 
+		if (_mem == nullptr)
+			throw 1; // Not enough memory?
+
 		{
 			const uint8_t* pbSrc = static_cast<const uint8_t*>(proxy_func);
 			uint8_t* pbTrampoline = _mem->trampoline;
@@ -52,7 +56,7 @@ struct lambda
 				const uint8_t* pbOp = pbSrc;
 				long lExtra = 0;
 
-				pbSrc = (const uint8_t*)_sl::_DetourCopyInstructionX64(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
+				pbSrc = (const uint8_t*)_sl::_DetourCopyInstruction(pbTrampoline, nullptr, pbSrc, nullptr, &lExtra);
 
 				pbTrampoline += (pbSrc - pbOp); // + lExtra; // FIXME
 
