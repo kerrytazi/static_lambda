@@ -76,7 +76,7 @@ void* _sl::_alloc(const void *_target, size_t _size)
 	}
 #else
 	// 2Gib up
-	for (size_t offset = 0; offset < 2 * 1024 * 1024 * 1024;)
+	for (size_t offset = 0; offset < size_t(2) * 1024 * 1024 * 1024;)
 	{
 		const uint8_t* off_target = static_cast<const uint8_t*>(target) + offset;
 
@@ -93,11 +93,11 @@ void* _sl::_alloc(const void *_target, size_t _size)
 				return result;
 		}
 
-		offset = static_cast<const uint8_t*>(info.BaseAddress) + info.RegionSize - target;
+		offset = static_cast<const uint8_t*>(info.BaseAddress) + info.RegionSize - static_cast<const uint8_t*>(target);
 	}
 
 	// 2Gib down
-	for (size_t offset = 0; offset < 2 * 1024 * 1024 * 1024;)
+	for (size_t offset = 0; offset < size_t(2) * 1024 * 1024 * 1024;)
 	{
 		const uint8_t* off_target = static_cast<const uint8_t*>(target) - offset;
 
