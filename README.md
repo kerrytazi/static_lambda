@@ -99,25 +99,25 @@ struct target_struct
     int a;
     int b;
 
-    int target_func_stdcall()
+    int target_func_stdcall(int d)
     {
-        return a + b;
+        return a + b + d;
     }
 };
 ```
 ```cpp
-target_struct ts{ .a = 3, .b = 5 };
+target_struct ts{ .a = 3, .b = 1 };
 auto target_func = &target_struct::target_func;
 int c = 10;
 
-auto replacement = [c](target_struct* _this, auto original) -> int
+auto replacement = [c](target_struct* _this, int d, auto original) -> int
 {
-    return (*_this.*original)() + c;
+    return (*_this.*original)(d) + c;
 };
 
 sl::detour<int __thiscall(target_struct*)> a(&target_func_stdcall, replacement);
 
-int result = (ts.*target_func)(); // 3 + 5 + 10 = 18
+int result = (ts.*target_func)(4); // 3 + 1 + 4 + 10 = 18
 ```
 
 # How to import
