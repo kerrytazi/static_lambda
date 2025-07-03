@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <cstddef>
 
 namespace _sl
 {
 
-extern size_t(*const _get_rip)();
+extern intptr_t(*const _get_rip)();
 
 void* _alloc(const void* target, size_t size);
 void _free(void* ptr, size_t size);

@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <utility>
 #include <cstring>
+#include <bit>
 
 #if defined(_MSC_VER)
 #define _SL_NO_INLINE __declspec(noinline)
@@ -75,59 +76,128 @@ struct smem : smem_base
 template <typename F>
 struct helper;
 
-template <typename TRet, typename... TArgs>
-struct helper<TRet(TArgs...)>
-{
-	using function_pointer_type = TRet (*)(TArgs...);
+#define HELPER_IMPL(CALLING_CONVENTION) \
+template <typename TRet, typename... TArgs> \
+struct helper<TRet CALLING_CONVENTION (TArgs...)> \
+{ \
+	using function_pointer_type = TRet (CALLING_CONVENTION*)(TArgs...); \
+\
+	template <typename TOther> \
+	static constexpr bool is_compatible = std::is_same_v<decltype(std::declval<TOther>()(std::declval<TArgs>()...)), TRet>; \
+\
+	template <typename TOther> \
+	static constexpr bool is_compatible_detour = std::is_same_v<decltype(std::declval<TOther>()(std::declval<TArgs>()..., std::declval<function_pointer_type>())), TRet>; \
+\
+	template <typename FL> \
+	struct proxy \
+	{ \
+		static TRet CALLING_CONVENTION func(TArgs... args) \
+		{ \
+			/* _get_rip must be called inside this function */ \
+			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & ~intptr_t(0x0FFF)); \
+			/* noinline, otherwise compiler may inline lambda call. */ \
+			/* but we need to keep this function small for faster copy */ \
+			return call(mem, args...); \
+		} \
+\
+		static TRet CALLING_CONVENTION func_detour(TArgs... args) \
+		{ \
+			/* _get_rip must be called inside this function */ \
+			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & ~intptr_t(0x0FFF)); \
+			/* noinline, otherwise compiler may inline lambda call. */ \
+			/* but we need to keep this function small for faster copy */ \
+			return call_detour(mem, args...); \
+		} \
+\
+		_SL_NO_INLINE \
+		static TRet call(smem<FL>* mem, TArgs... args) \
+		{ \
+			return mem->func(args...); \
+		} \
+\
+		_SL_NO_INLINE \
+		static TRet call_detour(smem<FL>* mem, TArgs... args) \
+		{ \
+			function_pointer_type original = std::bit_cast<function_pointer_type>(&mem->original); \
+			return mem->func(args..., original); \
+		} \
+\
+		static void destroy(FL* func) \
+		{ \
+			func->~FL(); \
+		} \
+	}; \
+}
 
-	using function_pointer_detour_type = TRet (*)(function_pointer_type, TArgs...);
 
-	template <typename TOther>
-	static constexpr bool is_compatible = std::is_same_v<decltype(std::declval<TOther>()(std::declval<TArgs>()...)), TRet>;
+HELPER_IMPL(__cdecl);
+#if defined(_M_IX86) || defined(__i386__)
+HELPER_IMPL(__stdcall);
+HELPER_IMPL(__fastcall);
+#endif // defined(_M_IX86) || defined(__i386__)
+HELPER_IMPL(__vectorcall);
 
-	template <typename TOther>
-	static constexpr bool is_compatible_detour = std::is_same_v<decltype(std::declval<TOther>()(std::declval<function_pointer_type>(), std::declval<TArgs>()...)), TRet>;
+#undef HELPER_IMPL
 
-	template <typename FL>
-	struct proxy
-	{
-		static TRet func(TArgs... args)
-		{
-			// _get_rip must be called inside this function
-			auto mem = reinterpret_cast<smem<FL> *>(_sl::_get_rip() & (~size_t(0x0FFF)));
-			// noinline, otherwise compiler may inline lambda call.
-			// but we need to keep this function small for faster copy
-			return call(args..., mem);
-		}
+#if defined(_M_IX86) || defined(__i386__)
+#define HELPER_IMPL_CLASS(_CLASS, _CONST) \
+template <typename TRet, typename _CLASS, typename... TArgs> \
+struct helper<TRet __thiscall (_CONST _CLASS*, TArgs...)> \
+{ \
+	using function_pointer_type = TRet (__thiscall _CLASS::*)(TArgs...) _CONST; \
+\
+	template <typename TOther> \
+	static constexpr bool is_compatible = std::is_same_v<decltype(std::declval<TOther>()(std::declval<_CONST _CLASS*>(), std::declval<TArgs>()...)), TRet>; \
+\
+	template <typename TOther> \
+	static constexpr bool is_compatible_detour = std::is_same_v<decltype(std::declval<TOther>()(std::declval<_CONST _CLASS*>(), std::declval<TArgs>()..., std::declval<function_pointer_type>())), TRet>; \
+\
+	template <typename FL> \
+	struct proxy \
+	{ \
+		TRet __thiscall func(TArgs... args) _CONST \
+		{ \
+			/* _get_rip must be called inside this function */ \
+			auto mem = reinterpret_cast<smem<FL> *>(_sl::_get_rip() & (~size_t(0x0FFF))); \
+			/* noinline, otherwise compiler may inline lambda call. */ \
+			/* but we need to keep this function small for faster copy */ \
+			return call(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
+		} \
+\
+		TRet __thiscall func_detour(TArgs... args) _CONST \
+		{ \
+			/* _get_rip must be called inside this function */ \
+			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & (~size_t(0x0FFF))); \
+			/* noinline, otherwise compiler may inline lambda call. */ \
+			/* but we need to keep this function small for faster copy */ \
+			return call_detour(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
+		} \
+\
+		_SL_NO_INLINE \
+		static TRet call(smem<FL>* mem, _CONST _CLASS* _this, TArgs... args) \
+		{ \
+			return mem->func(_this, args...); \
+		} \
+\
+		_SL_NO_INLINE \
+		static TRet call_detour(smem<FL>* mem, _CONST _CLASS* _this, TArgs... args) \
+		{ \
+			function_pointer_type original = std::bit_cast<function_pointer_type>(&mem->original); \
+			return mem->func(_this, args..., original); \
+		} \
+\
+		static void destroy(FL* func) \
+		{ \
+			func->~FL(); \
+		} \
+	}; \
+}
 
-		static TRet func_detour(TArgs... args)
-		{
-			// _get_rip must be called inside this function
-			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & (~size_t(0x0FFF)));
-			// noinline, otherwise compiler may inline lambda call.
-			// but we need to keep this function small for faster copy
-			return call_detour(mem, args...);
-		}
+HELPER_IMPL_CLASS(TClass,);
+HELPER_IMPL_CLASS(TClass, const);
 
-		_SL_NO_INLINE
-		static TRet call(TArgs... args, smem<FL>* mem)
-		{
-			return mem->func(args...);
-		}
-
-		_SL_NO_INLINE
-		static TRet call_detour(smem<FL>* mem, TArgs... args)
-		{
-			function_pointer_type original = reinterpret_cast<function_pointer_type>(static_cast<void*>(mem->original));
-			return mem->func(original, args...);
-		}
-
-		static void destroy(FL* func)
-		{
-			func->~FL();
-		}
-	};
-};
+#undef HELPER_IMPL_CLASS
+#endif // defined(_M_IX86) || defined(__i386__)
 
 template <typename T>
 struct detour_tag {};

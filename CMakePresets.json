@@ -162,8 +162,8 @@
             "hidden": true,
             "inherits": "linux-base",
             "environment": {
-                "CFLAGS": "-m32",
-                "CXXFLAGS": "-m32"
+                "CFLAGS": "-m32 -msse -msse2",
+                "CXXFLAGS": "-m32 -msse -msse2"
             }
         },
         {

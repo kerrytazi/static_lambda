@@ -103,7 +103,7 @@ struct lambda
 
 	auto get_static_pointer() const
 	{
-		return reinterpret_cast<_sl::helper<F>::function_pointer_type>(static_cast<void*>(_mem->trampoline));
+		return std::bit_cast<typename _sl::helper<F>::function_pointer_type>(&_mem->trampoline);
 	}
 
 	_sl::smem_base* _mem = nullptr;

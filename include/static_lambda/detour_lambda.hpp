@@ -14,14 +14,14 @@ struct detour
 	detour(auto target, FL&& func)
 		: _lambda{ _sl::detour_tag<std::remove_reference_t<FL>>{} }
 	{
-		const uint8_t* t = static_cast<const uint8_t*>(_sl::unjump((const void*)target));
+		const uint8_t* t = static_cast<const uint8_t*>(_sl::unjump(std::bit_cast<const void*>(target)));
 
-		_lambda.template _init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL> &&>(func), reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func_detour), static_cast<const void*>(t));
+		_lambda.template _init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL>&&>(func), std::bit_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func_detour), static_cast<const void*>(t));
 
-		size_t lambda_pointer = reinterpret_cast<size_t>(_lambda.get_static_pointer());
+		intptr_t lambda_pointer = std::bit_cast<intptr_t>(_lambda.get_static_pointer());
 
-		size_t target_pointer = reinterpret_cast<size_t>(t);
-		size_t _s = lambda_pointer - target_pointer - 5;
+		intptr_t target_pointer = reinterpret_cast<intptr_t>(t);
+		intptr_t _s = lambda_pointer - target_pointer - 5;
 		uint8_t* s = reinterpret_cast<uint8_t*>(&_s);
 
 		const size_t min_patch_size = 5;
@@ -34,7 +34,7 @@ struct detour
 		size_t code_size = 0;
 
 		{
-			size_t _s = reinterpret_cast<size_t>(t) - reinterpret_cast<size_t>(_lambda._mem->original) - 5;
+			intptr_t _s = reinterpret_cast<intptr_t>(t) - reinterpret_cast<intptr_t>(&_lambda._mem->original) - 5;
 			uint8_t* s = reinterpret_cast<uint8_t*>(&_s);
 
 			const uint8_t redirect[] = {

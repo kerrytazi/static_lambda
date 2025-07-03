@@ -17,7 +17,7 @@ const uint8_t _sl_get_rip_code[]
 	0xff, 0xe0,
 };
 
-size_t(*const _sl::_get_rip)() = (size_t(*)())&_sl_get_rip_code;
+intptr_t(*const _sl::_get_rip)() = (intptr_t(*)())&_sl_get_rip_code;
 
 #ifdef _WIN32
 
