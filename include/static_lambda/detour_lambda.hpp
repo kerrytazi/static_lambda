@@ -16,7 +16,12 @@ struct detour
 	{
 		const uint8_t* t = static_cast<const uint8_t*>(_sl::unjump(std::bit_cast<const void*>(target)));
 
-		_lambda.template _init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL>&&>(func), std::bit_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func_detour), static_cast<const void*>(t));
+		_lambda.template _init<std::remove_reference_t<FL>>(
+			static_cast<std::remove_reference_t<FL>&&>(func),
+			std::bit_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func_detour),
+			std::bit_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::call_detour),
+			static_cast<const void*>(t)
+		);
 
 		intptr_t lambda_pointer = std::bit_cast<intptr_t>(_lambda.get_static_pointer());
 

@@ -33,7 +33,7 @@ struct lambda
 	}
 
 	template <typename FL>
-	void _init(FL&& func, const void* proxy_func, const void* target)
+	void _init(FL&& func, const void* proxy_func, const void* proxy_call, const void* target)
 	{
 		if (!target)
 			target = proxy_func;
@@ -71,11 +71,12 @@ struct lambda
 				throw 1; // func/func_detour is too large?
 		}
 
-		replace_pattern(_mem);
+		replace_pattern(_mem, intptr_t(0x0123456789abcdef), intptr_t(_mem));
+		replace_pattern(_mem, intptr_t(0xfedcba9876543210), intptr_t(proxy_call));
 
 		_mem->alloc_size = alloc_size;
 
-		_mem->destroy = reinterpret_cast<void (*)(void*)>(reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::destroy));
+		_mem->destroy = reinterpret_cast<void(*)(void*)>(reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::destroy));
 
 		new (_mem + 1) FL(std::move(func));
 	}
@@ -84,7 +85,13 @@ struct lambda
 	lambda(FL&& func)
 	{
 		static_assert(_sl::helper<F>::template is_compatible<std::remove_reference_t<FL>>, "Lambda type is not compatible with declaration");
-		_init<std::remove_reference_t<FL>>(static_cast<std::remove_reference_t<FL>&&>(func), reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func), nullptr);
+
+		_init<std::remove_reference_t<FL>>(
+			static_cast<std::remove_reference_t<FL>&&>(func),
+			std::bit_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::func),
+			std::bit_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::call),
+			nullptr
+		);
 	}
 
 	template <typename FL>

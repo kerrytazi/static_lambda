@@ -74,20 +74,19 @@ struct smem : smem_base
 };
 
 inline
-void replace_pattern(smem_base* mem)
+void replace_pattern(smem_base* mem, intptr_t pattern, intptr_t replacement)
 {
-	auto pattern = intptr_t(0x0123456789abcdef);
 	auto p = (uint8_t*)&pattern;
 
 	auto t = mem->trampoline;
 
 	bool found_pattern = false;
 
-	for (size_t i = 0; i < sizeof(mem->original); ++i)
+	for (size_t i = 0; i < sizeof(mem->trampoline); ++i)
 	{
 		bool found = true;
 
-		for (size_t j = 0; j < sizeof(pattern) && i + j < sizeof(mem->original); ++j)
+		for (size_t j = 0; j < sizeof(pattern) && i + j < sizeof(mem->trampoline); ++j)
 		{
 			if (t[i + j] != p[j])
 			{
@@ -107,10 +106,9 @@ void replace_pattern(smem_base* mem)
 	if (!found_pattern)
 		throw 1;
 
-	auto mem_ptr = intptr_t(mem);
-	auto m = (uint8_t*)&mem_ptr;
+	auto r = (uint8_t*)&replacement;
 
-	memcpy(t, m, sizeof(pattern));
+	memcpy(t, r, sizeof(pattern));
 }
 
 template <typename F>
@@ -134,13 +132,15 @@ struct helper<TRet CALLING_CONVENTION (TArgs...)> \
 		static TRet CALLING_CONVENTION func(TArgs... args) \
 		{ \
 			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
-			return call(mem, args...); \
+			volatile auto _call = reinterpret_cast<TRet(*)(smem<FL>*, TArgs...)>(intptr_t(0xfedcba9876543210)); \
+			return _call(mem, args...); \
 		} \
 \
 		static TRet CALLING_CONVENTION func_detour(TArgs... args) \
 		{ \
 			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
-			return call_detour(mem, args...); \
+			volatile auto _call_detour = reinterpret_cast<TRet(*)(smem<FL>*, TArgs...)>(intptr_t(0xfedcba9876543210)); \
+			return _call_detour(mem, args...); \
 		} \
 \
 		_SL_NO_INLINE \
@@ -191,13 +191,15 @@ struct helper<TRet __thiscall (_CONST _CLASS*, TArgs...)> \
 		TRet __thiscall func(TArgs... args) _CONST \
 		{ \
 			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
-			return call(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
+			volatile auto _call = reinterpret_cast<TRet(*)(smem<FL>*, _CONST _CLASS*, TArgs...)>(intptr_t(0xfedcba9876543210)); \
+			return _call(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
 		} \
 \
 		TRet __thiscall func_detour(TArgs... args) _CONST \
 		{ \
 			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
-			return call_detour(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
+			volatile auto _call_detour = reinterpret_cast<TRet(*)(smem<FL>*, _CONST _CLASS*, TArgs...)>(intptr_t(0xfedcba9876543210)); \
+			return _call_detour(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
 		} \
 \
 		_SL_NO_INLINE \
