@@ -71,6 +71,8 @@ struct lambda
 				throw 1; // func/func_detour is too large?
 		}
 
+		replace_pattern(_mem);
+
 		_mem->alloc_size = alloc_size;
 
 		_mem->destroy = reinterpret_cast<void (*)(void*)>(reinterpret_cast<void*>(&_sl::helper<F>::template proxy<std::remove_reference_t<FL>>::destroy));

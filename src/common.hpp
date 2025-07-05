@@ -73,6 +73,46 @@ struct smem : smem_base
 	FL func;
 };
 
+inline
+void replace_pattern(smem_base* mem)
+{
+	auto pattern = intptr_t(0x0123456789abcdef);
+	auto p = (uint8_t*)&pattern;
+
+	auto t = mem->trampoline;
+
+	bool found_pattern = false;
+
+	for (size_t i = 0; i < sizeof(mem->original); ++i)
+	{
+		bool found = true;
+
+		for (size_t j = 0; j < sizeof(pattern) && i + j < sizeof(mem->original); ++j)
+		{
+			if (t[i + j] != p[j])
+			{
+				found = false;
+				break;
+			}
+		}
+
+		if (found)
+		{
+			t += i;
+			found_pattern = true;
+			break;
+		}
+	}
+
+	if (!found_pattern)
+		throw 1;
+
+	auto mem_ptr = intptr_t(mem);
+	auto m = (uint8_t*)&mem_ptr;
+
+	memcpy(t, m, sizeof(pattern));
+}
+
 template <typename F>
 struct helper;
 
@@ -93,19 +133,13 @@ struct helper<TRet CALLING_CONVENTION (TArgs...)> \
 	{ \
 		static TRet CALLING_CONVENTION func(TArgs... args) \
 		{ \
-			/* _get_rip must be called inside this function */ \
-			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & ~intptr_t(0x0FFF)); \
-			/* noinline, otherwise compiler may inline lambda call. */ \
-			/* but we need to keep this function small for faster copy */ \
+			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
 			return call(mem, args...); \
 		} \
 \
 		static TRet CALLING_CONVENTION func_detour(TArgs... args) \
 		{ \
-			/* _get_rip must be called inside this function */ \
-			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & ~intptr_t(0x0FFF)); \
-			/* noinline, otherwise compiler may inline lambda call. */ \
-			/* but we need to keep this function small for faster copy */ \
+			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
 			return call_detour(mem, args...); \
 		} \
 \
@@ -128,7 +162,6 @@ struct helper<TRet CALLING_CONVENTION (TArgs...)> \
 		} \
 	}; \
 }
-
 
 HELPER_IMPL(__cdecl);
 #if defined(_M_IX86) || defined(__i386__)
@@ -157,19 +190,13 @@ struct helper<TRet __thiscall (_CONST _CLASS*, TArgs...)> \
 	{ \
 		TRet __thiscall func(TArgs... args) _CONST \
 		{ \
-			/* _get_rip must be called inside this function */ \
-			auto mem = reinterpret_cast<smem<FL> *>(_sl::_get_rip() & (~size_t(0x0FFF))); \
-			/* noinline, otherwise compiler may inline lambda call. */ \
-			/* but we need to keep this function small for faster copy */ \
+			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
 			return call(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
 		} \
 \
 		TRet __thiscall func_detour(TArgs... args) _CONST \
 		{ \
-			/* _get_rip must be called inside this function */ \
-			auto mem = reinterpret_cast<smem<FL>*>(_sl::_get_rip() & (~size_t(0x0FFF))); \
-			/* noinline, otherwise compiler may inline lambda call. */ \
-			/* but we need to keep this function small for faster copy */ \
+			volatile auto mem = reinterpret_cast<smem<FL>*>(intptr_t(0x0123456789abcdef)); \
 			return call_detour(mem, std::bit_cast<_CONST _CLASS*>(this), args...); \
 		} \
 \

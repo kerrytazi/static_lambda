@@ -3,22 +3,6 @@
 
 #include <cstdint>
 
-#if defined _MSC_VER
-#pragma section(".text")
-__declspec(allocate(".text"))
-#else
-__attribute__((section(".text")))
-#endif
-const uint8_t _sl_get_rip_code[]
-{
-	// pop rax
-	0x58,
-	// jmp rax
-	0xff, 0xe0,
-};
-
-intptr_t(*const _sl::_get_rip)() = (intptr_t(*)())&_sl_get_rip_code;
-
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
