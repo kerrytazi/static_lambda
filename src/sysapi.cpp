@@ -9,56 +9,8 @@
 #define NOMINMAX
 #include <windows.h>
 
-void* _sl::_alloc(const void *_target, size_t _size)
+static void* try_alloc_search(const void *target, size_t size)
 {
-	auto [target, size] = align_mem_down_to(_target, _size, 4096);
-
-	if (size & (4096-1))
-		size = (size & ~(4096-1)) + 4096;
-
-#if 1
-	// 2Gib down
-	for (size_t i = 1; i < 2040; ++i)
-	{
-		size_t offset = i * 1024 * 1024; // check each 1Mib
-
-		const uint8_t* off_target = static_cast<const uint8_t*>(target) - offset;
-
-		MEMORY_BASIC_INFORMATION info = {};
-		if (!VirtualQuery((const void*)off_target, &info, sizeof(info)))
-		{
-			offset += 4096;
-			continue;
-		}
-
-		if (info.State & MEM_FREE)
-		{
-			if (void* result = VirtualAlloc((void*)off_target, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
-				return result;
-		}
-	}
-
-	// 2Gib up
-	for (size_t i = 1; i < 2040; ++i)
-	{
-		size_t offset = i * 1024 * 1024; // check each 1Mib
-
-		const uint8_t* off_target = static_cast<const uint8_t*>(target) + offset;
-
-		MEMORY_BASIC_INFORMATION info = {};
-		if (!VirtualQuery((const void*)off_target, &info, sizeof(info)))
-		{
-			offset += 4096;
-			continue;
-		}
-
-		if (info.State & MEM_FREE)
-		{
-			if (void* result = VirtualAlloc((void*)off_target, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
-				return result;
-		}
-	}
-#else // TODO: Fix
 	// 2Gib up
 	for (size_t offset = 0; offset < size_t(2) * 1024 * 1024 * 1024;)
 	{
@@ -100,7 +52,117 @@ void* _sl::_alloc(const void *_target, size_t _size)
 
 		offset += off_target - (static_cast<const uint8_t*>(info.AllocationBase) - 4096);
 	}
-#endif
+
+	return nullptr;
+}
+
+static void* try_alloc_1mb(const void *target, size_t size)
+{
+	// 2Gib down
+	for (size_t i = 1; i < 2040; ++i)
+	{
+		size_t offset = i * 1024 * 1024; // check each 1Mib
+
+		const uint8_t* off_target = static_cast<const uint8_t*>(target) - offset;
+
+		MEMORY_BASIC_INFORMATION info = {};
+		if (!VirtualQuery((const void*)off_target, &info, sizeof(info)))
+		{
+			offset += 4096;
+			continue;
+		}
+
+		if (info.State & MEM_FREE)
+		{
+			if (void* result = VirtualAlloc((void*)off_target, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+				return result;
+		}
+	}
+
+	// 2Gib up
+	for (size_t i = 1; i < 2040; ++i)
+	{
+		size_t offset = i * 1024 * 1024; // check each 1Mib
+
+		const uint8_t* off_target = static_cast<const uint8_t*>(target) + offset;
+
+		MEMORY_BASIC_INFORMATION info = {};
+		if (!VirtualQuery((const void*)off_target, &info, sizeof(info)))
+		{
+			offset += 4096;
+			continue;
+		}
+
+		if (info.State & MEM_FREE)
+		{
+			if (void* result = VirtualAlloc((void*)off_target, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+				return result;
+		}
+	}
+
+	return nullptr;
+}
+
+static void* try_alloc_512mb_tight(const void *target, size_t size)
+{
+	// 2Gib down
+	for (size_t i = 128 * 1024; i < 256 * 2040; ++i)
+	{
+		size_t offset = i * 4 * 1024; // check each 4Kib
+
+		const uint8_t* off_target = static_cast<const uint8_t*>(target) - offset;
+
+		MEMORY_BASIC_INFORMATION info = {};
+		if (!VirtualQuery((const void*)off_target, &info, sizeof(info)))
+		{
+			offset += 4096;
+			continue;
+		}
+
+		if (info.State & MEM_FREE)
+		{
+			if (void* result = VirtualAlloc((void*)off_target, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+				return result;
+		}
+	}
+
+	// 2Gib up
+	for (size_t i = 128 * 1024; i < 256 * 2040; ++i)
+	{
+		size_t offset = i * 4 * 1024; // check each 4Kib
+
+		const uint8_t* off_target = static_cast<const uint8_t*>(target) + offset;
+
+		MEMORY_BASIC_INFORMATION info = {};
+		if (!VirtualQuery((const void*)off_target, &info, sizeof(info)))
+		{
+			offset += 4096;
+			continue;
+		}
+
+		if (info.State & MEM_FREE)
+		{
+			if (void* result = VirtualAlloc((void*)off_target, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+				return result;
+		}
+	}
+
+	return nullptr;
+}
+
+void* _sl::_alloc(const void *_target, size_t _size)
+{
+	auto [target, size] = align_mem_down_to(_target, _size, 4096);
+
+	if (size & (4096-1))
+		size = (size & ~(4096-1)) + 4096;
+
+	if (auto result = try_alloc_search(target, size))
+		return result;
+	if (auto result = try_alloc_1mb(target, size))
+		return result;
+	if (auto result = try_alloc_512mb_tight(target, size))
+		return result;
 
 	return nullptr;
 }
