@@ -40,6 +40,8 @@ struct lambda : lambda_base
 	template <typename FL>
 	void _init(FL&& func, const void* proxy_func, const void* proxy_call, const void* target)
 	{
+		proxy_func = _sl::unjump(proxy_func);
+
 		if (!target)
 			target = proxy_func;
 
