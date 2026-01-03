@@ -6,7 +6,7 @@
 namespace _sl
 {
 
-void* _alloc(const void* target, size_t size);
+void* _alloc(const void* target, size_t size, bool have_target);
 void _free(void* ptr, size_t size);
 void _protect(void* ptr, size_t size);
 

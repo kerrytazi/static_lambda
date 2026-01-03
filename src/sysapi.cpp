@@ -150,12 +150,15 @@ static void* try_alloc_512mb_tight(const void *target, size_t size)
 	return nullptr;
 }
 
-void* _sl::_alloc(const void *_target, size_t _size)
+void* _sl::_alloc(const void *_target, size_t _size, bool have_target)
 {
 	auto [target, size] = align_mem_down_to(_target, _size, 4096);
 
 	if (size & (4096-1))
 		size = (size & ~(4096-1)) + 4096;
+
+	if (!have_target)
+		return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 	if (auto result = try_alloc_search(target, size))
 		return result;
@@ -183,7 +186,7 @@ void _sl::_protect(void* ptr, size_t size)
 
 #include <sys/mman.h>
 
-void* _sl::_alloc(const void* _target, size_t _size)
+void* _sl::_alloc(const void* _target, size_t _size, bool have_target)
 {
 	auto [target, size] = align_mem_down_to(_target, _size, 4096);
 

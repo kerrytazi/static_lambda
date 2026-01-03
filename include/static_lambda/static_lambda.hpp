@@ -42,12 +42,14 @@ struct lambda : lambda_base
 	{
 		proxy_func = _sl::unjump(proxy_func);
 
+		bool have_target = target;
+
 		if (!target)
 			target = proxy_func;
 
 		size_t alloc_size = sizeof(_sl::smem<std::remove_reference_t<FL>>);
 
-		_mem = static_cast<_sl::smem_base*>(_sl::_alloc(target, alloc_size));
+		_mem = static_cast<_sl::smem_base*>(_sl::_alloc(target, alloc_size, have_target));
 
 		if (_mem == nullptr)
 			throw 1; // Not enough memory?
