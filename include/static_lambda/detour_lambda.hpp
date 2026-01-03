@@ -7,8 +7,13 @@ namespace sl
 {
 
 
+struct detour_base
+{
+	virtual ~detour_base() {}
+};
+
 template <typename F>
-struct detour
+struct detour : detour_base
 {
 	template <typename FL>
 	detour(auto target, FL&& func)

@@ -12,8 +12,13 @@ namespace sl
 {
 
 
+struct lambda_base
+{
+	virtual ~lambda_base() {}
+};
+
 template <typename F>
-struct lambda
+struct lambda : lambda_base
 {
 	lambda(const lambda&) = delete;
 	lambda& operator=(const lambda&) = delete;
