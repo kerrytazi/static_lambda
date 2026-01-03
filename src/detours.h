@@ -11,6 +11,14 @@
 #ifndef _DETOURS_H_
 #define _DETOURS_H_
 
+
+#if __cplusplus >= 201103L || _MSVC_LANG >= 201103L
+#include <type_traits>
+#endif
+
+namespace _Detour
+{
+
 #define DETOURS_VERSION     0x4c0c1   // 0xMAJORcMINORcPATCH
 
 //////////////////////////////////////////////////////////////////////////////
@@ -460,7 +468,7 @@ PVOID WINAPI DetourFindFunction(_In_ LPCSTR pszModule,
                                 _In_ LPCSTR pszFunction);
 PVOID WINAPI DetourCodeFromPointer(_In_ PVOID pPointer,
                                    _Out_opt_ PVOID *ppGlobals);
-PVOID WINAPI DetourCopyInstruction(_In_opt_ PVOID pDst,
+PVOID WINAPI _xDetourCopyInstruction(_In_opt_ PVOID pDst,
                                    _Inout_opt_ PVOID *ppDstPool,
                                    _In_ PVOID pSrc,
                                    _Out_opt_ PVOID *ppTarget,
@@ -742,7 +750,7 @@ VOID CALLBACK DetourFinishHelperProcess(_In_ HWND,
 /////////////////////////////////////////////////// Type-safe overloads for C++
 //
 #if __cplusplus >= 201103L || _MSVC_LANG >= 201103L
-#include <type_traits>
+//#include <type_traits>
 
 template<typename T>
 struct DetoursIsFunctionPointer : std::false_type {};
@@ -935,6 +943,8 @@ BOOL WINAPI DetourAreSameGuid(_In_ REFGUID left, _In_ REFGUID right);
 
 #endif // DETOURS_INTERNAL
 #endif // __cplusplus
+
+} // namespace _Detour
 
 #endif // _DETOURS_H_
 //

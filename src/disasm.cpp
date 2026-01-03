@@ -12,6 +12,9 @@
 #include "detours.h"
 #include <limits.h>
 
+namespace _Detour
+{
+
 #if DETOURS_VERSION != 0x4c0c1   // 0xMAJORcMINORcPATCH
 #error detours.h version mismatch
 #endif
@@ -309,7 +312,7 @@ class CDetourDis
     BYTE                m_rbScratchDst[64]; // matches or exceeds rbCode
 };
 
-PVOID WINAPI DetourCopyInstruction(_In_opt_ PVOID pDst,
+PVOID WINAPI _xDetourCopyInstruction(_In_opt_ PVOID pDst,
                                    _Inout_opt_ PVOID *ppDstPool,
                                    _In_ PVOID pSrc,
                                    _Out_opt_ PVOID *ppTarget,
@@ -4278,6 +4281,7 @@ PVOID WINAPI DetourCopyInstruction(_In_opt_ PVOID pDst,
 
 #endif // DETOURS_ARM64
 
+/*
 BOOL WINAPI DetourSetCodeModule(_In_ HMODULE hModule,
                                 _In_ BOOL fLimitReferencesToModule)
 {
@@ -4301,6 +4305,9 @@ BOOL WINAPI DetourSetCodeModule(_In_ HMODULE hModule,
 #error unknown architecture (x86, x64, arm, arm64, ia64)
 #endif
 }
+*/
+
+} // namespace _Detour
 
 //
 ///////////////////////////////////////////////////////////////// End of File.

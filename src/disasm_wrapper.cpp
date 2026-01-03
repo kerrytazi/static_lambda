@@ -3,12 +3,17 @@
 
 #include "disasm.cpp"
 
-ULONG WINAPI DetourGetModuleSize(_In_opt_ HMODULE hModule)
+namespace _Detour
+{
+
+static ULONG WINAPI DetourGetModuleSize(_In_opt_ HMODULE hModule)
 {
     return 0;
 }
 
-inline BOOL detour_does_code_end_function(PBYTE pbCode)
+}
+
+static BOOL detour_does_code_end_function(PBYTE pbCode)
 {
     if (pbCode[0] == 0xeb ||    // jmp +imm8
         pbCode[0] == 0xe9 ||    // jmp +imm32
@@ -42,7 +47,7 @@ namespace _sl
 
 void* _DetourCopyInstruction(void* pDst, void** ppDstPool, const void* pSrc, void** ppTarget, long* plExtra)
 {
-	return DetourCopyInstruction(pDst, ppDstPool, (void*)pSrc, ppTarget, plExtra);
+	return _Detour::_xDetourCopyInstruction(pDst, ppDstPool, (void*)pSrc, ppTarget, plExtra);
 }
 
 bool _detour_does_code_end_function(const unsigned char* pbCode)
