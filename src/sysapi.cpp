@@ -16,7 +16,7 @@ void* _sl::_alloc(const void *_target, size_t _size)
 	if (size & (4096-1))
 		size = (size & ~(4096-1)) + 4096;
 
-#if 0
+#if 1
 	// 2Gib down
 	for (size_t i = 1; i < 2040; ++i)
 	{
@@ -58,7 +58,7 @@ void* _sl::_alloc(const void *_target, size_t _size)
 				return result;
 		}
 	}
-#else
+#else // TODO: Fix
 	// 2Gib up
 	for (size_t offset = 0; offset < size_t(2) * 1024 * 1024 * 1024;)
 	{
