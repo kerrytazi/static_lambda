@@ -157,7 +157,7 @@ void* _sl::_alloc(const void *_target, size_t _size, bool have_target)
 	if (size & (4096-1))
 		size = (size & ~(4096-1)) + 4096;
 
-	if (!have_target)
+	if (!have_target || (sizeof(void*) == 4))
 		return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 	if (auto result = try_alloc_search(target, size))

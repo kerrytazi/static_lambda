@@ -1,7 +1,10 @@
 #include "static_lambda/static_lambda.hpp"
 #include "static_lambda/detour_lambda.hpp"
+#include "static_lambda/detour_static.hpp"
 
 #include <iostream>
+#include <vector>
+#include <memory>
 
 struct Vector2
 {
@@ -45,8 +48,94 @@ struct target_class
 };
 #endif // defined(_M_IX86) || defined(__i386__)
 
+float (*target_func_var)(int a, float b, Vector2 v) = &target_func__default;
+int c_var = 1;
+
 int main()
 {
+	{
+		const char* target_name = "detour_static";
+
+		{
+			auto replacement = +[](int a, float b, Vector2 v) -> float
+			{
+				return target_func_var(a, b, v) + (float)c_var;
+			};
+
+			{
+				float result = target_func__default(3, 4.0f, { 1.0f, 2.0f });
+				std::cout << target_name << " before (2): " << result << "\n";
+			}
+
+			if (!sl::detour_static_create((void**)&target_func_var, replacement))
+				throw 1;
+
+			sl::detour_static_enable((void**)&target_func_var);
+
+			{
+				float result = target_func__default(3, 4.0f, { 1.0f, 2.0f });
+				std::cout << target_name << " after  (3): " << result << "\n";
+			}
+
+			sl::detour_static_disable((void**)&target_func_var);
+			sl::detour_static_destroy((void**)&target_func_var);
+
+			{
+				float result = target_func__default(3, 4.0f, { 1.0f, 2.0f });
+				std::cout << target_name << " after after (2): " << result << "\n";
+			}
+		}
+	}
+
+	{
+		const char* target_name = "detour_static_self_destroy";
+
+		{
+			auto replacement = +[](int a, float b, Vector2 v) -> float
+			{
+				auto result = target_func_var(a, b, v) + (float)c_var;
+
+				sl::detour_static_disable((void**)&target_func_var);
+				sl::detour_static_destroy((void**)&target_func_var);
+
+				return result;
+			};
+
+			{
+				float result = target_func__default(3, 4.0f, { 1.0f, 2.0f });
+				std::cout << target_name << " before (2): " << result << "\n";
+			}
+
+			if (!sl::detour_static_create((void**)&target_func_var, replacement))
+				throw 1;
+
+			sl::detour_static_enable((void**)&target_func_var);
+
+			{
+				float result = target_func__default(3, 4.0f, { 1.0f, 2.0f });
+				std::cout << target_name << " after  (3): " << result << "\n";
+			}
+		}
+	}
+
+#ifdef NDEBUG
+	{
+		int(*volatile target)(int, int) = &target_func3;
+
+		std::unique_ptr<sl::detour<int(int, int)>> detour;
+		detour = std::make_unique<sl::detour<int(int, int)>>(target, [&](int a, int b, auto original) -> int
+		{
+			auto result = original(a, b);
+			//detour.reset();
+			return result;
+		});
+
+		int result = target(3, 5);
+
+		return 0;
+	}
+#endif // NDEBUG
+
 	{
 		const char* target_name = "target_func__default";
 		volatile auto target = &target_func__default;

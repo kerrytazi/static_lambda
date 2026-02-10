@@ -3,6 +3,7 @@ Helps convert C++ lambdas with captures to function pointers.
 # Contents
 - [static_lambda](#static_lambda)
 - [detour_lambda](#detour_lambda)
+- [detour_static](#detour_static)
 - [Calling conventions](#calling-conventions)
 - [How to import](#how-to-import)
   - [cmake](#cmake)
@@ -63,6 +64,39 @@ sl::detour<int(int, int)> a(&target_func, replacement);
 
 int result = target_func(3, 5); // 3 + 5 + 10 = 18
 ```
+
+# detour_static
+
+```cpp
+#include "static_lambda/detour_static.hpp"
+```
+```cpp
+int target_func(int a, int b)
+{
+    return a + b;
+}
+```
+```cpp
+static int (*target_var)(int a, int b) = &target_func;
+static int c = 10;
+
+int replacement(int a, int b)
+{
+    return target_var(a, b) + c;
+}
+```
+```cpp
+if (!sl::detour_static_create((void**)&target_var, &replacement))
+  throw 1;
+
+sl::detour_static_enable((void**)&target_var);
+
+int result = target_func(3, 5); // 3 + 5 + 10 = 18
+
+sl::detour_static_disable((void**)&target_var);
+sl::detour_static_destroy((void**)&target_var);
+```
+
 # Calling conventions
 Both `sl::lambda` and `sl::detour` supports next calling conventions:
  - `__cdecl` (x86, x64) (no variadics)

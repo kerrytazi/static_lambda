@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(static_lambda VERSION 0.1 LANGUAGES CXX)
+project(static_lambda VERSION 0.1 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_SOURCES
 	include/static_lambda/static_lambda.hpp
 	include/static_lambda/detour_lambda.hpp
+
+	include/static_lambda/detour_static.hpp
+	src/detour_static.cpp
 
 	src/common.hpp
 
