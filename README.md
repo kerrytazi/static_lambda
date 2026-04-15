@@ -1,3 +1,8 @@
+# &#x26A0; Deprecated &#x26A0;
+Checkout new implementation here: [StaticLambda](https://github.com/kerrytazi/StaticLambda)/[DetourLambda](https://github.com/kerrytazi/DetourLambda)
+
+# static_lambda
+
 Helps convert C++ lambdas with captures to function pointers.
 
 # Contents
