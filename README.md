@@ -163,7 +163,7 @@ cd myproject
 
 git clone
 ```
-git clone https://github.com/kerrytazi/static_lambda.git lib/ccall
+git clone https://github.com/kerrytazi/static_lambda.git lib/static_lambda
 ```
 
 ## cmake
